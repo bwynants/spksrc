@@ -11,21 +11,17 @@ TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 CFG_FILE="share/PlexConnect/Settings.cfg"
 RUNAS="${PACKAGE}"
 PYTHON="${PYTHON_DIR}/bin/python"
-APACHE_DIR="/etc/httpd"
+APACHE_DIR="/usr/syno/apache"
 HTTPD_CONF_USER="${APACHE_DIR}/conf/httpd.conf-user"
 VHOST_FILE="${APACHE_DIR}/conf/extra/plexconnect-vhosts.conf"
-INSTALLER_LOG="/tmp/installer.log"
+INSTALLER_LOG="/../../@tmp/installer.log"
 ## not in use yet
-#HTTPD_SSL_CONF_USER="${APACHE_DIR}/conf/extra/httpd-ssl.conf-sys"
+#HTTPD_SSL_CONF_USER="${APACHE_DIR}/conf/extra/httpd-ssl.conf-user"
 #VHOST_SSL_FILE="${APACHE_DIR}/conf/extra/plexconnect-ssl-vhosts.conf"
-
-restart_apache() {
-  /usr/syno/sbin/synoservicecfg --restart httpd-user
-}
 
 installer_log() {
   return
-  #echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
+  echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
 }
 
 preinst ()
@@ -77,7 +73,7 @@ postinst ()
   #echo "Include ${VHOST_SSL_FILE}" >> ${HTTPD_SSL_CONF_USER}
 
   # restart apache
-  restart_apache
+  /usr/syno/etc.defaults/rc.d/S97apache-user.sh restart > /dev/null
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}
@@ -113,7 +109,7 @@ postuninst ()
   #rm -fr ${VHOST_SSL_FILE}
 
   # restart apache
-  restart_apache
+  /usr/syno/etc.defaults/rc.d/S97apache-user.sh restart > /dev/null
 
   exit 0
 }
@@ -125,14 +121,8 @@ preupgrade ()
   mkdir -p ${TMP_DIR}/${PACKAGE}
 
   # Save post upgrade configuration files
-  installer_log "backup old files"
-  cp -r ${INSTALL_DIR}/share/PlexConnect ${TMP_DIR}/${PACKAGE}/
-
-  #remember old ip address
-  if [ ! -f ${INSTALL_DIR}/share/PlexConnect/ip.cfg ]; then
-    installer_log "backup Old IP"
-    cat ${VHOST_FILE} | grep "ProxyPassReverse"  | awk -F:// '{print $2}' |  awk -F: '{print $1}' > ${TMP_DIR}/${PACKAGE}/PlexConnect/ip.cfg
-  fi
+  installer_log "backup configuration"
+  cp ${INSTALL_DIR}/share/PlexConnect/*.cfg ${TMP_DIR}/${PACKAGE}/
 
   # backup certificates
   if [ -f ${INSTALL_DIR}/etc/certificates/trailers.cer ]; then
@@ -140,6 +130,10 @@ preupgrade ()
     mkdir -p ${TMP_DIR}/${PACKAGE}/certificates
     cp ${INSTALL_DIR}/etc/certificates/* ${TMP_DIR}/${PACKAGE}/certificates
   fi
+
+  #remember ip address
+  installer_log "backup IP"
+  cat ${VHOST_FILE} | grep "ProxyPassReverse"  | awk -F:// '{print $2}' |  awk -F: '{print $1}' > ${TMP_DIR}/${PACKAGE}/ip
 
   exit 0
 }
@@ -149,24 +143,8 @@ postupgrade ()
   installer_log "-- postupgrade ${TMP_DIR}/${PACKAGE}"
   # Restore some stuff
 
-  # restore ip address
-  if [ -f ${TMP_DIR}/${PACKAGE}/PlexConnect/ip.cfg ]; then
-    MYIP=`cat ${TMP_DIR}/${PACKAGE}/PlexConnect/ip.cfg`
-    if [ "${MYIP}" != "" ]; then
-      installer_log "restoring IP ${MYIP}"
-      sed -i -e "s|127.0.0.1|$MYIP|g" ${VHOST_FILE}
-    fi
-  fi
-
-  if [ -d ${TMP_DIR}/${PACKAGE}/PlexConnect/.git ]; then
-    installer_log "full restore and git pull to update"
-    rm -r ${INSTALL_DIR}/share/PlexConnect
-    mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect ${INSTALL_DIR}/share/
-    git --git-dir=${INSTALL_DIR}/share/PlexConnect/.git pull || true
-  else
-    installer_log "restore only configuration"
-    mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect/*.cfg ${INSTALL_DIR}/share/PlexConnect/
-  fi
+  installer_log "restore configuration"
+  mv -f ${TMP_DIR}/${PACKAGE}/*.cfg ${INSTALL_DIR}/share/PlexConnect/
 
   # restore certificates
   if [ -f ${TMP_DIR}/${PACKAGE}/certificates/trailers.cer ]; then
@@ -174,10 +152,17 @@ postupgrade ()
     mv -f ${TMP_DIR}/${PACKAGE}/certificates/* ${INSTALL_DIR}/etc/certificates/
   fi
 
+  # restore ip address
+  MYIP=`cat ${TMP_DIR}/${PACKAGE}/ip`
+  if [ "${MYIP}" != "" ]; then
+    installer_log "restoring IP ${MYIP}"
+    sed -i -e "s|127.0.0.1|$MYIP|g" ${VHOST_FILE}
+  fi
+
   rm -fr ${TMP_DIR}/${PACKAGE}
 
   # restart apache
-  restart_apache
+  /usr/syno/etc.defaults/rc.d/S97apache-user.sh restart > /dev/null
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}

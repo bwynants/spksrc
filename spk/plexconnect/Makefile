@@ -25,8 +25,6 @@ INSTALL_PREFIX = /usr/local/$(SPK_NAME)
 COPY_TARGET = nop
 POST_STRIP_TARGET = plexconnect_extra_install
 
-FIRMWARE=5.0-4418
-
 # Pure Python package, make sure ARCH is not defined
 override ARCH=
 

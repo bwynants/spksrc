@@ -1,6 +1,6 @@
 SPK_NAME = nzbget-testing
-SPK_VERS = 12.0~r914
-SPK_REV = 3
+SPK_VERS = 13.0~r979
+SPK_REV = 4
 SPK_ICON = src/nzbget-testing.png
 DSM_UI_DIR = app
 
@@ -13,7 +13,7 @@ DESCRIPTION_SPN = NZBGet es una aplicación de linea de comandos escrita en C++ 
 RELOAD_UI = yes
 ADMIN_PORT = 9876
 DISPLAY_NAME = NZBGet Testing
-CHANGELOG = "1. Uninstallation required"
+CHANGELOG = "1. DSM 5.0 compatibility"
 BETA = 1
 
 HOMEPAGE = http://nzbget.sourceforge.net/
@@ -42,7 +42,7 @@ nzbget_extra_install: $(STAGING_DIR)/share/nzbget/ppscripts/nzbToMedia
 	install -m 644 src/app/config $(STAGING_DIR)/app/config
 	install -m 755 -d $(STAGING_DIR)/app/texts
 	install -m 755 -d $(STAGING_DIR)/app/images
-	for size in 16 24 32 48; do \
+	for size in 16 24 32 48 72; do \
 		convert $(SPK_ICON) -thumbnail $${size}x$${size} \
 		        $(STAGING_DIR)/app/images/$(SPK_NAME)-$${size}.png ; \
 	done

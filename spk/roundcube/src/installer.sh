@@ -48,19 +48,17 @@ postinst ()
     if [ "${SYNOPKG_PKG_STATUS}" == "INSTALL" ]; then
         ${MYSQL} -u root -p"${wizard_mysql_password_root}" -e "CREATE DATABASE ${MYSQL_DATABASE}; GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'localhost' IDENTIFIED BY '${wizard_mysql_password_roundcube}';"
         ${MYSQL} -u ${MYSQL_USER} -p"${wizard_mysql_password_roundcube}" ${MYSQL_DATABASE} < ${WEB_DIR}/${PACKAGE}/SQL/mysql.initial.sql
-        sed "s|^\(\$rcmail_config\['db_dsnw'\] =\).*$|\1 \'mysqli://roundcube:${wizard_mysql_password_roundcube}@localhost/roundcube\';|" \
-            ${WEB_DIR}/${PACKAGE}/config/db.inc.php.dist > ${WEB_DIR}/${PACKAGE}/config/db.inc.php
-        sed -e "s|^\(\$rcmail_config\['default_host'\] =\).*$|\1 \'${wizard_roundcube_default_host}\';|" \
-            -e "s|^\(\$rcmail_config\['smtp_server'\] =\).*$|\1 \'${wizard_roundcube_smtp_server}\';|" \
-            -e "s|^\(\$rcmail_config\['smtp_port'\] =\).*$|\1 \'${wizard_roundcube_smtp_port:=25}\';|" \
-            -e "s|^\(\$rcmail_config\['smtp_user'\] =\).*$|\1 \'${wizard_roundcube_smtp_user}\';|" \
-            -e "s|^\(\$rcmail_config\['smtp_pass'\] =\).*$|\1 \'${wizard_roundcube_smtp_pass}\';|" \
-            ${WEB_DIR}/${PACKAGE}/config/main.inc.php.dist > ${WEB_DIR}/${PACKAGE}/config/main.inc.php
+        sed -e "s|^\(\$config\['db_dsnw'\] =\).*$|\1 \'mysqli://roundcube:${wizard_mysql_password_roundcube}@localhost/roundcube\';|" \
+            -e "s|^\(\$config\['default_host'\] =\).*$|\1 \'${wizard_roundcube_default_host}\';|" \
+            -e "s|^\(\$config\['smtp_server'\] =\).*$|\1 \'${wizard_roundcube_smtp_server}\';|" \
+            -e "s|^\(\$config\['smtp_port'\] =\).*$|\1 \'${wizard_roundcube_smtp_port:=25}\';|" \
+            -e "s|^\(\$config\['smtp_user'\] =\).*$|\1 \'${wizard_roundcube_smtp_user}\';|" \
+            -e "s|^\(\$config\['smtp_pass'\] =\).*$|\1 \'${wizard_roundcube_smtp_pass}\';|" \
+            ${WEB_DIR}/${PACKAGE}/config/config.inc.php.sample > ${WEB_DIR}/${PACKAGE}/config/config.inc.php
     fi
 
     # Fix permissions
-    chown ${USER} ${WEB_DIR}/${PACKAGE}/temp
-    chown ${USER} ${WEB_DIR}/${PACKAGE}/logs
+    chown -R ${USER} ${WEB_DIR}/${PACKAGE}
 
     exit 0
 }
@@ -94,20 +92,47 @@ postuninst ()
 
 preupgrade ()
 {
-    # Save configuration files
     rm -fr ${TMP_DIR}/${PACKAGE}
     mkdir -p ${TMP_DIR}/${PACKAGE}
+
+    # Save pre 1.0.0 configuration files
     mv ${WEB_DIR}/${PACKAGE}/config/db.inc.php ${TMP_DIR}/${PACKAGE}/
     mv ${WEB_DIR}/${PACKAGE}/config/main.inc.php ${TMP_DIR}/${PACKAGE}/
+
+    # Save configuration files for version >= 1.0.0
+    mv ${WEB_DIR}/${PACKAGE}/config/config.inc.php ${TMP_DIR}/${PACKAGE}/
+
+    # Save user installed plugins
+    mkdir -p ${TMP_DIR}/${PACKAGE}/plugins
+    for plugin in ${WEB_DIR}/${PACKAGE}/plugins/*/
+    do
+        dir=`basename $plugin`
+        if [ ! -d ${INSTALL_DIR}/share/${PACKAGE}/plugins/${dir} ]; then
+            cp -pR ${WEB_DIR}/${PACKAGE}/plugins/${dir} ${TMP_DIR}/${PACKAGE}/plugins/
+        fi
+    done
 
     exit 0
 }
 
 postupgrade ()
 {
-    # Restore configuration files
+    # Restore pre 1.0.0 configuration files, still 1.0.0 compatible
     mv ${TMP_DIR}/${PACKAGE}/db.inc.php ${WEB_DIR}/${PACKAGE}/config/db.inc.php
     mv ${TMP_DIR}/${PACKAGE}/main.inc.php ${WEB_DIR}/${PACKAGE}/config/main.inc.php
+
+    # Restore configuration files for version >= 1.0.0
+    mv ${TMP_DIR}/${PACKAGE}/config.inc.php ${WEB_DIR}/${PACKAGE}/config/config.inc.php
+
+    # Restore user installed plugins
+    for plugin in ${TMP_DIR}/${PACKAGE}/plugins/*/
+    do
+        dir=`basename $plugin`
+        if [ ! -d ${WEB_DIR}/${PACKAGE}/plugins/${dir} ]; then
+            cp -pR ${TMP_DIR}/${PACKAGE}/plugins/${dir} ${WEB_DIR}/${PACKAGE}/plugins/
+        fi
+    done
+
     rm -fr ${TMP_DIR}/${PACKAGE}
 
     exit 0

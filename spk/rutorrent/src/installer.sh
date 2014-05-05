@@ -3,6 +3,7 @@
 # Package
 PACKAGE="rutorrent"
 DNAME="ruTorrent"
+PACKAGE_NAME="com.synocommunity.packages.${PACKAGE}"
 
 # Others
 INSTALL_DIR="/usr/local/${PACKAGE}"
@@ -32,7 +33,11 @@ postinst ()
     cp -pR ${INSTALL_DIR}/share/${PACKAGE} ${WEB_DIR}
 
     # Configure open_basedir
-    echo -e "<Directory \"${WEB_DIR}/${PACKAGE}\">\nphp_admin_value open_basedir none\n</Directory>" > /usr/syno/etc/sites-enabled-user/${PACKAGE}.conf
+    if [ "${APACHE_USER}" == "nobody" ]; then
+        echo -e "<Directory \"${WEB_DIR}/${PACKAGE}\">\nphp_admin_value open_basedir none\n</Directory>" > /usr/syno/etc/sites-enabled-user/${PACKAGE}.conf
+    else
+        echo -e "[PATH=${WEB_DIR}/${PACKAGE}]\nopen_basedir = Null" > /etc/php/conf.d/${PACKAGE_NAME}.ini
+    fi
 
     # Create user
     adduser -h ${INSTALL_DIR}/var -g "${DNAME} User" -G ${GROUP} -s /bin/sh -S -D ${USER}
@@ -48,12 +53,22 @@ postinst ()
 
         sed -i -e "s|@download_dir@|${wizard_download_dir:=/volume1/downloads}|g" \
                -e "s|@max_memory@|$MAX_MEMORY|g" \
+               -e "s|@port_range@|${wizard_port_range:=6881-6999}|g" \
                ${INSTALL_DIR}/var/.rtorrent.rc
 
         if [ -d "${wizard_watch_dir}" ]; then
             sed -i -e "s|@watch_dir@|${wizard_watch_dir}|g" ${INSTALL_DIR}/var/.rtorrent.rc
         else
             sed -i -e "/@watch_dir@/d" ${INSTALL_DIR}/var/.rtorrent.rc
+        fi
+        # Set group and permissions on download- and watch dir for DSM5
+        if [ `/bin/get_key_value /etc.defaults/VERSION buildnumber` -ge "4418" ]; then
+            chgrp users ${wizard_download_dir:=/volume1/downloads}
+            chmod g+rw ${wizard_download_dir:=/volume1/downloads}
+            if [ -d "${wizard_watch_dir}" ]; then
+                chgrp users ${wizard_watch_dir}
+                chmod g+rw ${wizard_watch_dir}
+            fi
         fi
     fi
 
@@ -84,7 +99,8 @@ postuninst ()
     rm -f ${INSTALL_DIR}
 
     # Remove open_basedir configuration
-    rm /usr/syno/etc/sites-enabled-user/${PACKAGE}.conf
+    rm -f /usr/syno/etc/sites-enabled-user/${PACKAGE}.conf
+    rm -f /etc/php/conf.d/${PACKAGE_NAME}.ini
 
     # Remove the web interface
     rm -fr ${WEB_DIR}/${PACKAGE}

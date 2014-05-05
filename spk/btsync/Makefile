@@ -1,5 +1,5 @@
 SPK_NAME = btsync
-SPK_VERS = 1.2.82
+SPK_VERS = 1.3.87
 SPK_REV = 1
 SPK_ICON = src/btsync.png
 DSM_UI_DIR = app
@@ -37,7 +37,7 @@ btsync_extra_install:
 	install -m 755 -d $(STAGING_DIR)/app
 	install -m 644 src/app/config $(STAGING_DIR)/app/config
 	install -m 755 -d $(STAGING_DIR)/app/images
-	for size in 16 24 32 48; do \
+	for size in 16 24 32 48 72; do \
 		convert $(SPK_ICON) -thumbnail $${size}x$${size} \
 		        $(STAGING_DIR)/app/images/$(SPK_NAME)-$${size}.png ; \
 	done

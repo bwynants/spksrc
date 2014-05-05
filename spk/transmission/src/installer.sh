@@ -7,7 +7,7 @@ DNAME="Transmission"
 # Others
 INSTALL_DIR="/usr/local/${PACKAGE}"
 SSS="/var/packages/${PACKAGE}/scripts/start-stop-status"
-PATH="${INSTALL_DIR}/bin:/usr/local/bin:/bin:/usr/bin:/usr/syno/bin"
+PATH="${INSTALL_DIR}/bin:${PATH}"
 USER="transmission"
 GROUP="users"
 CFG_FILE="${INSTALL_DIR}/var/settings.json"
@@ -16,6 +16,12 @@ TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 
 preinst ()
 {
+    if [ "${SYNOPKG_PKG_STATUS}" == "INSTALL" ]; then
+        if [ ! -d "${wizard_download_dir}" ]; then
+            echo "Download folder ${wizard_download_dir} does not exist."
+            exit 1
+        fi
+    fi
     exit 0
 }
 
@@ -30,16 +36,34 @@ postinst ()
     # Create user
     adduser -h ${INSTALL_DIR}/var -g "${DNAME} User" -G ${GROUP} -s /bin/sh -S -D ${USER}
 
-    # Edit the configuration according to the wizard
-    sed -i -e "s|@download_dir@|${wizard_download_dir:=/volume1/downloads}|g" ${CFG_FILE}
-    sed -i -e "s|@username@|${wizard_username:=admin}|g" ${CFG_FILE}
-    sed -i -e "s|@password@|${wizard_password:=admin}|g" ${CFG_FILE}
-    if [ -d "${wizard_watch_dir}" ]; then
-        sed -i -e "s|@watch_dir_enabled@|true|g" ${CFG_FILE}
-        sed -i -e "s|@watch_dir@|${wizard_watch_dir}|g" ${CFG_FILE}
+    if [ "${SYNOPKG_PKG_STATUS}" == "INSTALL" ]; then
+        # Edit the configuration according to the wizard
+        sed -i -e "s|@download_dir@|${wizard_download_dir:=/volume1/downloads}|g" ${CFG_FILE}
+        sed -i -e "s|@username@|${wizard_username:=admin}|g" ${CFG_FILE}
+        sed -i -e "s|@password@|${wizard_password:=admin}|g" ${CFG_FILE}
+        if [ -d "${wizard_watch_dir}" ]; then
+            sed -i -e "s|@watch_dir_enabled@|true|g" ${CFG_FILE}
+            sed -i -e "s|@watch_dir@|${wizard_watch_dir}|g" ${CFG_FILE}
+        else
+            sed -i -e "s|@watch_dir_enabled@|false|g" ${CFG_FILE}
+            sed -i -e "/@watch_dir@/d" ${CFG_FILE}
+        fi
+        # Set group and permissions on download- and watch dir for DSM5
+        if [ `/bin/get_key_value /etc.defaults/VERSION buildnumber` -ge "4418" ]; then
+            chgrp users ${wizard_download_dir:=/volume1/downloads}
+            chmod g+rw ${wizard_download_dir:=/volume1/downloads}
+            if [ -d "${wizard_watch_dir}" ]; then
+                chgrp users ${wizard_watch_dir}
+                chmod g+rw ${wizard_watch_dir}
+            fi
+        fi
+    fi
+    if [ -d "${wizard_incomplete_dir}" ]; then
+        sed -i -e "s|@incomplete_dir_enabled@|true|g" ${CFG_FILE}
+        sed -i -e "s|@incomplete_dir@|${wizard_incomplete_dir}|g" ${CFG_FILE}
     else
-        sed -i -e "s|@watch_dir_enabled@|false|g" ${CFG_FILE}
-        sed -i -e "/@watch_dir@/d" ${CFG_FILE}
+        sed -i -e "s|@incomplete_dir_enabled@|false|g" ${CFG_FILE}
+        sed -i -e "/@incomplete_dir@/d" ${CFG_FILE}
     fi
 
     # Correct the files ownership

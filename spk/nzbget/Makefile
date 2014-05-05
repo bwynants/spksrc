@@ -1,6 +1,6 @@
 SPK_NAME = nzbget
 SPK_VERS = 12.0
-SPK_REV = 9
+SPK_REV = 10
 SPK_ICON = src/nzbget.png
 DSM_UI_DIR = app
 
@@ -13,6 +13,7 @@ DESCRIPTION_SPN = NZBGet es una aplicación de linea de comandos escrita en C++ 
 RELOAD_UI = yes
 ADMIN_PORT = 6789
 DISPLAY_NAME = NZBGet
+CHANGELOG = "1. DSM 5.0 compatibility\n2. unrar optimization"
 
 HOMEPAGE = http://nzbget.sourceforge.net/
 LICENSE  =
@@ -40,7 +41,7 @@ nzbget_extra_install: $(STAGING_DIR)/share/nzbget/ppscripts/nzbToMedia
 	install -m 644 src/app/config $(STAGING_DIR)/app/config
 	install -m 755 -d $(STAGING_DIR)/app/texts
 	install -m 755 -d $(STAGING_DIR)/app/images
-	for size in 16 24 32 48; do \
+	for size in 16 24 32 48 72; do \
 		convert $(SPK_ICON) -thumbnail $${size}x$${size} \
 		        $(STAGING_DIR)/app/images/$(SPK_NAME)-$${size}.png ; \
 	done

@@ -1,6 +1,6 @@
 SPK_NAME = sabnzbd
-SPK_VERS = 0.7.17
-SPK_REV = 9
+SPK_VERS = 0.7.19
+SPK_REV = 11
 SPK_ICON = src/sabnzbd.png
 DSM_UI_DIR = app
 
@@ -15,7 +15,7 @@ DESCRIPTION_SPN = SABnzbd hace que Usenet sea lo más simple posible, automatiza
 ADMIN_PORT = 8080
 RELOAD_UI = yes
 DISPLAY_NAME = SABnzbd
-CHANGELOG = "1. Check the download directory exists on new install"
+CHANGELOG = "Update SABnzbd to 0.7.19"
 
 HOMEPAGE   = http://sabnzbd.org/
 LICENSE    = GPL
@@ -24,6 +24,7 @@ WIZARDS_DIR = src/wizard/
 
 INSTALLER_SCRIPT = src/installer.sh
 SSS_SCRIPT       = src/dsm-control.sh
+FWPORTS          = src/${SPK_NAME}.sc
 
 INSTALL_PREFIX = /usr/local/$(SPK_NAME)
 
@@ -56,4 +57,8 @@ sabnzbd_extra_install: $(STAGING_DIR)/share/requirements.pybundle
 $(STAGING_DIR)/share/requirements.pybundle:
 	@$(MSG) "Bundling requirements"
 	install -m 755 -d $(STAGING_DIR)/share
+<<<<<<< HEAD
 	@cd $(WORK_DIR) && $(PIP) bundle --no-use-wheel $@ configobj
+=======
+	@cd $(WORK_DIR) && $(PIP) bundle --no-use-wheel $@ configobj
+>>>>>>> 203295ad1e6966567e70aeab5a2d5a11ea3bea06

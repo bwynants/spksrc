@@ -12,8 +12,9 @@ PATH="${INSTALL_DIR}/bin:${PATH}"
 USER="${PACKAGE}"
 GROUP="users"
 TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
-PID_FILE="${INSTALL_DIR}/var/${PACKAGE}.pid"
 
+SERVICETOOL="/usr/syno/bin/servicetool"
+FWPORTS="/var/packages/${PACKAGE}/scripts/${PACKAGE}.sc"
 
 preinst ()
 {
@@ -37,6 +38,9 @@ postinst ()
     # Log
     echo " -- || Package Install Complete - $(date) || -- " >> ${INSTALL_LOG} 2>&1
 
+    # Add firewall config
+    ${SERVICETOOL} --install-configure-file --package ${FWPORTS} >> /dev/null
+
     exit 0
 }
 
@@ -49,6 +53,11 @@ preuninst ()
     if [ "${SYNOPKG_PKG_STATUS}" != "UPGRADE" ]; then
         delgroup ${USER} ${GROUP}
         deluser ${USER}
+    fi
+
+    # Remove firewall config
+    if [ "${SYNOPKG_PKG_STATUS}" == "UNINSTALL" ]; then
+        ${SERVICETOOL} --remove-configure-file --package ${PACKAGE}.sc >> /dev/null
     fi
 
     exit 0

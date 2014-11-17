@@ -19,6 +19,7 @@ LICENSE    = GPL
 
 INSTALLER_SCRIPT = src/installer.sh
 SSS_SCRIPT       = src/dsm-control.sh
+FWPORTS          = src/${SPK_NAME}.sc
 
 INSTALL_PREFIX = /usr/local/$(SPK_NAME)
 
@@ -43,4 +44,4 @@ xdm_extra_install: $(STAGING_DIR)/share/XDM
 
 $(STAGING_DIR)/share/XDM:
 	install -m 755 -d $(STAGING_DIR)/share
-	cd $(STAGING_DIR)/share && git clone https://github.com/lad1337/XDM.git
+	cd $(STAGING_DIR)/share && git clone --depth=1 https://github.com/lad1337/XDM.git

@@ -12,13 +12,14 @@ DESCRIPTION = Horde Groupware Webmail Edition is a free, enterprise ready, brows
 ADMIN_URL = /horde/
 RELOAD_UI = yes
 DISPLAY_NAME = Horde
-CHANGELOG = "1. DSM 5.0 compatibility\n2. Synology Pear dependency"
+CHANGELOG = "1. DSM 5.0 compatibility<br>2. Synology Pear dependency"
 BETA = 1
 
 HOMEPAGE   = http://www.horde.org/
 LICENSE    = LGPL
 
 WIZARDS_DIR = src/wizard/
+CONF_DIR = src/conf/
 
 INSTALLER_SCRIPT = src/installer.sh
 SSS_SCRIPT       = src/dsm-control.sh

@@ -1,5 +1,5 @@
 SPK_NAME = nzbdrone
-SPK_VERS = 2.0.0.1350
+SPK_VERS = 2.0.0.1397
 SPK_REV = 1
 SPK_ICON = src/nzbdrone.png
 
@@ -26,7 +26,7 @@ LICENSE  =
 
 INSTALLER_SCRIPT = src/installer.sh
 SSS_SCRIPT       = src/dsm-control.sh
-ADDITIONAL_SCRIPTS =
+FWPORTS          = src/${SPK_NAME}.sc
 
 INSTALL_PREFIX = /usr/local/$(SPK_NAME)
 

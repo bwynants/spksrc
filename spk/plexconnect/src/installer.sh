@@ -67,14 +67,14 @@ postinst ()
   sed -i -e "s|%hosttointercept%|${pc_host_name}|g" "${CFG_FILE}"
   sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"
 
-cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE_NAME}-vhost.conf"
+cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf"
     ServerName    ${pc_host_name}
     ServerAlias   atv.plexconnect
     ProxyPreserveHost On
     ProxyPass   / http://${sIPNAS}:81/ nocanon
     ProxyPassReverse  / http://${sIPNAS}:81/
 EOF
-cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE_NAME}-ssl-vhost.conf"
+cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhost.conf"
     ServerName          ${pc_host_name}
     ServerAlias         atv.plexconnect
     SSLEngine           On
@@ -88,9 +88,9 @@ cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE_NAME}-ssl-vhost.conf"
 EOF
 
   # create symbolic links
-  ln -s "${INSTALL_DIR}/etc/${PACKAGE_NAME}-vhost.conf" "${HTTPD_CONF}/${PACKAGE_NAME}-vhost.conf"
+  ln -s "${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf" "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
   # no HTTPS for now
-  #  ln -s "${INSTALL_DIR}/etc/${PACKAGE_NAME}-ssl-vhost.conf" "${HTTPD_CONF}/${PACKAGE_NAME}-ssl-vhost.conf"
+  #  ln -s "${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhost.conf" "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
   httpd_reload
 
   # Correct the files ownership
@@ -107,8 +107,8 @@ preuninst ()
     # Remove the user (if not upgrading)
     deluser ${PACKAGE}
 
-    rm -f "${HTTPD_CONF}/${PACKAGE_NAME}-vhost.conf"
-    rm -f "${HTTPD_CONF}/${PACKAGE_NAME}-ssl-vhost.conf"
+    rm -f "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
+    rm -f "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
     # restart apache
     httpd_reload
   fi
@@ -166,9 +166,9 @@ postupgrade ()
   fi
 
   # restore vhost
-  if [ -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE_NAME}*-vhost.conf ]; then
+  if [ -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ]; then
     installer_log "restore certificates"
-    mv -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE_NAME}*-vhost.conf ${INSTALL_DIR}/etc/
+    mv -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ${INSTALL_DIR}/etc/
   fi
 
   # restart apache

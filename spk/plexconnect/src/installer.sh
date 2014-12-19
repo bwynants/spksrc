@@ -7,7 +7,7 @@ DNAME="PlexConnect"
 # Others
 TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 INSTALL_DIR="/usr/local/${PACKAGE}"
-PLEXCONNECT_DIR="$[INSTALL_DIR}/share/PlexConnect"
+PLEXCONNECT_DIR="${INSTALL_DIR}/share/PlexConnect"
 CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
 HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"

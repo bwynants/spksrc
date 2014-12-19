@@ -5,20 +5,29 @@ PACKAGE="plexconnect"
 DNAME="PlexConnect"
 
 # Others
-INSTALL_DIR="/usr/local/${PACKAGE}"
 TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
-CFG_FILE="share/PlexConnect/Settings.cfg"
-RUNAS="${PACKAGE}"
-APACHE_DIR="/etc/httpd"
-HTTPD_CONF_USER="${APACHE_DIR}/conf/httpd.conf-user"
-VHOST_FILE="${APACHE_DIR}/conf/extra/plexconnect-vhosts.conf"
+INSTALL_DIR="/usr/local/${PACKAGE}"
+PLEXCONNECT_DIR="$[INSTALL_DIR}/share/PlexConnect"
+CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
+HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"
-## not in use yet
-#HTTPD_SSL_CONF_USER="${APACHE_DIR}/conf/extra/httpd-ssl.conf-sys"
-#VHOST_SSL_FILE="${APACHE_DIR}/conf/extra/plexconnect-ssl-vhosts.conf"
 
-restart_apache() {
-  /usr/syno/sbin/synoservicecfg --restart httpd-user
+if [ "${pc_internal_dns}" == "true" ]; then
+    pc_internal_dns="True"
+else
+    pc_internal_dns="False"
+fi
+
+if [ "${pc_host_marketwatch}" == "true" ]; then
+    pc_host_name="secure.marketwatch.com" && cert_name="marketwatch"
+elif [ "${pc_host_imovie}" == "true" ]; then
+    pc_host_name="www.icloud.com"         && cert_name="icloud"
+else
+    pc_host_name="trailers.apple.com"     && cert_name="trailers"
+fi
+
+httpd_reload() {
+  /usr/syno/sbin/synoservicecfg --reload httpd-user
 }
 
 installer_log() {
@@ -35,6 +44,7 @@ preinst ()
 postinst ()
 {
   installer_log "-- postinst"
+
   # Link
   ln -s ${SYNOPKG_PKGDEST} ${INSTALL_DIR}
 
@@ -45,37 +55,43 @@ postinst ()
   #openssl req -new -nodes -newkey rsa:2048 -out "${INSTALL_DIR}/etc/certificates/trailers.pem" -keyout "${INSTALL_DIR}/etc/certificates/trailers.key" -x509 -days 7300 -subj "/C=US/CN=trailers.apple.com"
   #openssl x509 -in "${INSTALL_DIR}/etc/certificates/trailers.pem" -outform der -out "${INSTALL_DIR}/etc/certificates/trailers.cer" && cat "${INSTALL_DIR}/etc/certificates/trailers.key" >> "${INSTALL_DIR}/etc/certificates/trailers.pem"
 
-  # Edit the configuration according to the wizard
-  if [ "${wizard_dns_server}" != "" ]; then
-    sed -i -e "s|8.8.8.8|${wizard_dns_server}|g" ${INSTALL_DIR}/${CFG_FILE}
-    installer_log "Using wizard_dns_server"
-  else
-    installer_log "Not Using wizard_dns_server"
-  fi
+  # get IP
+  sIPNAS=`/usr/syno/sbin/synonet --show | grep IP:  | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
+  # get DNS
+  sIPDNS=`/usr/syno/sbin/synonet --show | grep DNS: | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
 
-  #add VHOST_FILE
-  cp -f ${INSTALL_DIR}/app/plexconnect-vhosts.conf ${VHOST_FILE}
-  if [ "${wizard_ip}" != "" ]; then
-    installer_log "Using wizard_ip"
-    sed -i -e "s|127.0.0.1|$wizard_ip|g" ${VHOST_FILE}
-  else
-    installer_log "Not Using wizard_ip"
-  fi
-  #add VHOST_SSL_FILE
-  #cp -f ${INSTALL_DIR}/app/plexconnect-ssl-vhosts.conf ${VHOST_SSL_FILE}
+  # Edit the configuration according to the wizard or system settings
+  sed -i -e "s|%logpath%|${INSTALL_DIR}/var|g" "${CFG_FILE}"
+  sed -i -e "s|%ip_dnsmaster%|${sIPDNS}|g" ${CFG_FILE}
+  sed -i -e "s|%enable_dnsserver%|${pc_internal_dns}|g" "${CFG_FILE}"
+  sed -i -e "s|%hosttointercept%|${pc_host_name}|g" "${CFG_FILE}"
+  sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"
 
-  # make a copy of HTTPD_CONF_USER
-  cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
-  # include our VHOST_FILE
-  echo "Include ${VHOST_FILE}" >> ${HTTPD_CONF_USER}
+cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE_NAME}-vhost.conf"
+    ServerName    ${pc_host_name}
+    ServerAlias   atv.plexconnect
+    ProxyPreserveHost On
+    ProxyPass   / http://${sIPNAS}:81/ nocanon
+    ProxyPassReverse  / http://${sIPNAS}:81/
+EOF
+cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE_NAME}-ssl-vhost.conf"
+    ServerName          ${pc_host_name}
+    ServerAlias         atv.plexconnect
+    SSLEngine           On
+    SSLCertificateFile    ${INSTALL_DIR}/etc/certificates/${cert_name}.cer
+    SSLCertificateKeyFile ${INSTALL_DIR}/etc/certificates/${cert_name}.key
+    SSLProxyEngine      On
+    ProxyRequests       Off
+    ProxyPreserveHost   On
+    ProxyPass           / https://${sIPNAS}:444/
+    ProxyPassReverse    / https://${sIPNAS}:444/
+EOF
 
-  # make a copy of HTTPD_SSL_CONF_USER
-  #cp ${HTTPD_SSL_CONF_USER} ${HTTPD_SSL_CONF_USER}.bak
-  # include our VHOST_SSL_FILE
-  #echo "Include ${VHOST_SSL_FILE}" >> ${HTTPD_SSL_CONF_USER}
-
-  # restart apache
-  restart_apache
+  # create symbolic links
+  ln -s "${INSTALL_DIR}/etc/${PACKAGE_NAME}-vhost.conf" "${HTTPD_CONF}/${PACKAGE_NAME}-vhost.conf"
+  # no HTTPS for now
+  #  ln -s "${INSTALL_DIR}/etc/${PACKAGE_NAME}-ssl-vhost.conf" "${HTTPD_CONF}/${PACKAGE_NAME}-ssl-vhost.conf"
+  httpd_reload
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}
@@ -86,9 +102,15 @@ postinst ()
 preuninst ()
 {
   installer_log "-- preuninst"
-  # Remove the user (if not upgrading)
-  if [ "${SYNOPKG_PKG_STATUS}" != "UPGRADE" ]; then
+
+  if [ "${SYNOPKG_PKG_STATUS}" == "UNINSTALL" ]; then
+    # Remove the user (if not upgrading)
     deluser ${PACKAGE}
+
+    rm -f "${HTTPD_CONF}/${PACKAGE_NAME}-vhost.conf"
+    rm -f "${HTTPD_CONF}/${PACKAGE_NAME}-ssl-vhost.conf"
+    # restart apache
+    httpd_reload
   fi
 
   exit 0
@@ -97,21 +119,7 @@ preuninst ()
 postuninst ()
 {
   installer_log "-- postuninst"
-  # Remove link
-  rm -f ${INSTALL_DIR}
-
-  # remove plexconnect-vhosts.conf
-  sed -i -e "/^Include.*plexconnect-vhosts\.conf$/d" ${HTTPD_CONF_USER}
-  # remove plexconnect-ssl-vhosts.conf
-  #sed -i -e "/^Include.*plexconnect-ssl-vhosts\.conf$/d" ${HTTPD_SSL_CONF_USER}
-
-  #remove plexconnect-vhosts.conf
-  rm -fr ${VHOST_FILE}
-  #remove plexconnect-ssl-vhosts.conf
-  #rm -fr ${VHOST_SSL_FILE}
-
-  # restart apache
-  restart_apache
+  rm -rf ${INSTALL_DIR}
 
   exit 0
 }
@@ -119,25 +127,18 @@ postuninst ()
 preupgrade ()
 {
   installer_log "-- preupgrade ${TMP_DIR}/${PACKAGE}"
-  rm -fr ${TMP_DIR}/${PACKAGE}
+
+  rm -rf ${TMP_DIR}/${PACKAGE}
   mkdir -p ${TMP_DIR}/${PACKAGE}
 
-  # Save post upgrade configuration files
-  installer_log "backup old files"
-  cp -r ${INSTALL_DIR}/share/PlexConnect ${TMP_DIR}/${PACKAGE}/
+  # backup plexconnect (could be git copy we need to restore and it contains the settings)
+  installer_log "backup old PlexConnect files"
+  cp -r ${PLEXCONNECT_DIR} ${TMP_DIR}/${PACKAGE}/
 
-  #remember old ip address
-  if [ ! -f ${INSTALL_DIR}/share/PlexConnect/ip.cfg ]; then
-    installer_log "backup Old IP"
-    cat ${VHOST_FILE} | grep "ProxyPassReverse"  | awk -F:// '{print $2}' |  awk -F: '{print $1}' > ${TMP_DIR}/${PACKAGE}/PlexConnect/ip.cfg
-  fi
-
-  # backup certificates
-  if [ -f ${INSTALL_DIR}/etc/certificates/trailers.cer ]; then
-    installer_log "backup certificates"
-    mkdir -p ${TMP_DIR}/${PACKAGE}/certificates
-    cp ${INSTALL_DIR}/etc/certificates/* ${TMP_DIR}/${PACKAGE}/certificates
-  fi
+  # backup etc
+  installer_log "backup etc"
+  mkdir -p ${TMP_DIR}/${PACKAGE}/etc
+  cp ${INSTALL_DIR}/etc/* ${TMP_DIR}/${PACKAGE}/etc
 
   exit 0
 }
@@ -145,37 +146,36 @@ preupgrade ()
 postupgrade ()
 {
   installer_log "-- postupgrade ${TMP_DIR}/${PACKAGE}"
-  # Restore some stuff
 
-  # restore ip address
-  if [ -f ${TMP_DIR}/${PACKAGE}/PlexConnect/ip.cfg ]; then
-    MYIP=`cat ${TMP_DIR}/${PACKAGE}/PlexConnect/ip.cfg`
-    if [ "${MYIP}" != "" ]; then
-      installer_log "restoring IP ${MYIP}"
-      sed -i -e "s|127.0.0.1|$MYIP|g" ${VHOST_FILE}
-    fi
-  fi
+  # Restore needed for settings and some files
 
   if [ -d ${TMP_DIR}/${PACKAGE}/PlexConnect/.git ]; then
     installer_log "full restore and git pull to update"
-    rm -r ${INSTALL_DIR}/share/PlexConnect
+    rm -r {PLEXCONNECT_DIR}
     mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect ${INSTALL_DIR}/share/
-    git --git-dir=${INSTALL_DIR}/share/PlexConnect/.git pull || true
+    git --git-dir=${PLEXCONNECT_DIR}/.git pull || true
   else
     installer_log "restore only configuration"
-    mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect/*.cfg ${INSTALL_DIR}/share/PlexConnect/
+    mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect/*.cfg ${PLEXCONNECT_DIR}/
   fi
 
   # restore certificates
-  if [ -f ${TMP_DIR}/${PACKAGE}/certificates/trailers.cer ]; then
+  if [ -f ${TMP_DIR}/${PACKAGE}/etc/certificates/*.cer ]; then
     installer_log "restore certificates"
-    mv -f ${TMP_DIR}/${PACKAGE}/certificates/* ${INSTALL_DIR}/etc/certificates/
+    mv -f ${TMP_DIR}/${PACKAGE}/etc/certificates/* ${INSTALL_DIR}/etc/certificates/
   fi
 
-  rm -fr ${TMP_DIR}/${PACKAGE}
+  # restore vhost
+  if [ -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE_NAME}*-vhost.conf ]; then
+    installer_log "restore certificates"
+    mv -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE_NAME}*-vhost.conf ${INSTALL_DIR}/etc/
+  fi
 
   # restart apache
-  restart_apache
+  httpd_reload
+
+  # remove temp files
+  rm -fr ${TMP_DIR}/${PACKAGE}
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}

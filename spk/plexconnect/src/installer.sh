@@ -31,8 +31,8 @@ httpd_reload() {
 }
 
 installer_log() {
-  return
-  #echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
+  #return
+  echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
 }
 
 preinst ()
@@ -60,9 +60,11 @@ postinst ()
   # get DNS
   sIPDNS=`/usr/syno/sbin/synonet --show | grep DNS: | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
 
+  installer_log "${CFG_FILE}"
+
   # Edit the configuration according to the wizard or system settings
   sed -i -e "s|%logpath%|${INSTALL_DIR}/var|g" "${CFG_FILE}"
-  sed -i -e "s|%ip_dnsmaster%|${sIPDNS}|g" ${CFG_FILE}
+  sed -i -e "s|%ip_dnsmaster%|${sIPDNS}|g" "${CFG_FILE}"
   sed -i -e "s|%enable_dnsserver%|${pc_internal_dns}|g" "${CFG_FILE}"
   sed -i -e "s|%hosttointercept%|${pc_host_name}|g" "${CFG_FILE}"
   sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"

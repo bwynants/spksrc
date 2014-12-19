@@ -1,28 +1,20 @@
 [{
     "step_title": "Instellingen PlexConnect",
     "items": [{
-        "type": "textfield",
-        "desc": "Het IP adres van deze Synology NAS.",
+        "type": "multiselect",
+        "desc": "",
         "subitems": [{
-            "desc": "IP adres van deze NAS",
-            "key": "wizard_ip",
-            "validator": {
-                "allowBlank": false,
-                "minLength": 7,
-                "maxLength": 15
-                }
+            "key": "pc_internal_dns",
+            "desc": "Interne DNS Server gebruiken",
+            "defaultValue": true
         }]
     },{
-        "type": "textfield",
-        "desc": "Gateway of ISP DNS server (van ATV voordat je het veranderde)",
+        "type": "singleselect",
+        "desc": "Kies het Apple TV Kanaal dat PlexConnect moet onderscheppen:",
         "subitems": [{
-            "desc": "IP adres van DNS",
-            "key": "wizard_dns_server",
-            "validator": {
-                "allowBlank": true,
-                "minLength": 7,
-                "maxLength": 15
-                }
+            "key": "pc_host_trailers",
+            "desc": "Trailers (trailers.apple.com)",
+            "defaultValue": true
         }]
     }]
 }]

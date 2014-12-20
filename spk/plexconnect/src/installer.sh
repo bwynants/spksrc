@@ -56,11 +56,13 @@ postinst ()
   #openssl x509 -in "${INSTALL_DIR}/etc/certificates/trailers.pem" -outform der -out "${INSTALL_DIR}/etc/certificates/trailers.cer" && cat "${INSTALL_DIR}/etc/certificates/trailers.key" >> "${INSTALL_DIR}/etc/certificates/trailers.pem"
 
   # get IP
-  sIPNAS=`/usr/syno/sbin/synonet --show | grep IP:  | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
+  sIPNAS=`/usr/syno/sbin/synonet --show | grep -m 1 IP:  | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
   # get DNS
-  sIPDNS=`/usr/syno/sbin/synonet --show | grep DNS: | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
+  sIPDNS=`/usr/syno/sbin/synonet --show | grep -m 1 DNS: | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
 
-  installer_log "${CFG_FILE}"
+  installer_log "CFG_FILE ${CFG_FILE}"
+  installer_log "sIPNAS ${sIPNAS}"
+  installer_log "sIPDNS ${sIPDNS}"
 
   # Edit the configuration according to the wizard or system settings
   sed -i -e "s|%logpath%|${INSTALL_DIR}/var|g" "${CFG_FILE}"

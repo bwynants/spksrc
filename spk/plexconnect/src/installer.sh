@@ -72,18 +72,18 @@ postinst ()
   sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"
 
 cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf"
-NameVirtualHost *:80
-<VirtualHost *:80>
+  NameVirtualHost *:80
+  <VirtualHost *:80>
     ServerName    ${pc_host_name}
     ServerAlias   atv.plexconnect
     ProxyPreserveHost On
     ProxyPass   / http://${sIPNAS}:81/ nocanon
     ProxyPassReverse  / http://${sIPNAS}:81/
-</VirtualHost>
+  </VirtualHost>
 EOF
 cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhost.conf"
-NameVirtualHost *:443
-<VirtualHost *:443>
+  NameVirtualHost *:443
+  <VirtualHost *:443>
     ServerName          ${pc_host_name}
     ServerAlias         atv.plexconnect
     SSLEngine           On
@@ -94,7 +94,7 @@ NameVirtualHost *:443
     ProxyPreserveHost   On
     ProxyPass           / https://${sIPNAS}:444/
     ProxyPassReverse    / https://${sIPNAS}:444/
-</VirtualHost>
+  </VirtualHost>
 EOF
 
   # create symbolic links

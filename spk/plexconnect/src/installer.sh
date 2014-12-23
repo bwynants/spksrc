@@ -31,8 +31,8 @@ httpd_reload() {
 }
 
 installer_log() {
-  return
-  ##echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
+  #return
+  echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
 }
 
 preinst ()
@@ -97,7 +97,7 @@ cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhost.conf"
   </VirtualHost>
 EOF
 
-  installer_log " -s ${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf ${HTTPD_CONF}/${PACKAGE}-vhost.conf"
+  installer_log "ln -s ${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf ${HTTPD_CONF}/${PACKAGE}-vhost.conf"
   # create symbolic links
   ln -s "${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf" "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
   # no HTTPS for now
@@ -107,6 +107,7 @@ EOF
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}
 
+  installer_log "-- postinst done"
   exit 0
 }
 

@@ -11,6 +11,8 @@ PLEXCONNECT_DIR="${INSTALL_DIR}/share/PlexConnect"
 CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
 HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"
+PLEX_VHOST="${INSTALL_DIR}/etc/plexconnect-vhosts.conf"
+PLEX_SSL_VHOST="${INSTALL_DIR}/etc/plexconnect-ssl-vhosts.conf"
 
 if [ "${pc_internal_dns}" == "true" ]; then
     pc_internal_dns="True"
@@ -71,37 +73,19 @@ postinst ()
   sed -i -e "s|%hosttointercept%|${pc_host_name}|g" "${CFG_FILE}"
   sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"
 
-cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf"
-    NameVirtualHost *:80
-    <VirtualHost *:80>
-      ServerName    ${pc_host_name}
-      ServerAlias   atv.plexconnect
-      ProxyPreserveHost On
-      ProxyPass   / http://${sIPNAS}:81/ nocanon
-      ProxyPassReverse  / http://${sIPNAS}:81/
-    </VirtualHost>
-EOF
-cat <<EOF >"${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhost.conf"
-    NameVirtualHost *:443
-    <VirtualHost *:443>
-      ServerName          ${pc_host_name}
-      ServerAlias         atv.plexconnect
-      SSLEngine           On
-      SSLCertificateFile    ${INSTALL_DIR}/etc/certificates/${cert_name}.cer
-      SSLCertificateKeyFile ${INSTALL_DIR}/etc/certificates/${cert_name}.key
-      SSLProxyEngine      On
-      ProxyRequests       Off
-      ProxyPreserveHost   On
-      ProxyPass           / https://${sIPNAS}:444/
-      ProxyPassReverse    / https://${sIPNAS}:444/
-    </VirtualHost>
-EOF
+  sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_VHOST}"
+  sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_VHOST}"
+  sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_VHOST}"
 
-  installer_log "ln -s ${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf ${HTTPD_CONF}/${PACKAGE}-vhost.conf"
+  sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_SSL_VHOST}"
+  sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_SSL_VHOST}"
+  sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
+
+  installer_log "ln -s ${PLEX_VHOST} ${HTTPD_CONF}/${PACKAGE}-vhost.conf"
   # create symbolic links
-  ln -s "${INSTALL_DIR}/etc/${PACKAGE}-vhost.conf" "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
+  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
   # no HTTPS for now
-  #  ln -s "${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhost.conf" "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
+  #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
   httpd_reload
 
   # Correct the files ownership

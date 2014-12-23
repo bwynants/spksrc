@@ -15,6 +15,15 @@
             "key": "pc_host_trailers",
             "desc": "Trailers (trailers.apple.com)",
             "defaultValue": true
+        }, {
+            "key": "pc_host_marketwatch",
+            "desc": "WSJ Live (secure.marketwatch.com)",
+            "defaultValue": false
+        }],
+        "subitems_disabled": [{
+            "key": "pc_host_imovie",
+            "desc": "iMovie Theater (www.icloud.com)",
+            "defaultValue": false
         }]
     }]
 }]

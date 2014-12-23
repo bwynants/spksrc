@@ -83,7 +83,7 @@ postinst ()
 
   installer_log "ln -s ${PLEX_VHOST} ${HTTPD_CONF}/${PACKAGE}-vhost.conf"
   # create symbolic links
-  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
+  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/${PACKAGE}-vhost.conf" >> "${INSTALLER_LOG}"
   # no HTTPS for now
   #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
   httpd_reload

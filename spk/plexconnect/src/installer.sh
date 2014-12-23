@@ -82,7 +82,7 @@ postinst ()
   sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
 
   # create symbolic links
-  ln -sv "${PLEX_VHOST}" "${HTTPD_CONF}/${PACKAGE}-vhost.conf" >> "${INSTALLER_LOG}"
+  ln -sv "${PLEX_VHOST}" "${HTTPD_CONF}/${PACKAGE}-vhost.conf" >> "${INSTALLER_LOG}" > "${INSTALLER_LOG}"
   # no HTTPS for now
   #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
   httpd_reload

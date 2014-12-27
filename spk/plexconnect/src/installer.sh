@@ -11,8 +11,8 @@ PLEXCONNECT_DIR="${INSTALL_DIR}/share/PlexConnect"
 CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
 HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"
-PLEX_VHOST="${INSTALL_DIR}/etc/plexconnect-vhosts.conf"
-PLEX_SSL_VHOST="${INSTALL_DIR}/etc/plexconnect-ssl-vhosts.conf"
+PLEX_VHOST="${INSTALL_DIR}/etc/httpd-vhosts.conf-plex"
+PLEX_SSL_VHOST="${INSTALL_DIR}/etc/httpd-ssl-vhosts.conf-plex"
 
 if [ "${pc_internal_dns}" == "true" ]; then
     pc_internal_dns="True"
@@ -33,8 +33,8 @@ httpd_reload() {
 }
 
 installer_log() {
-  #return
-  echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
+  return
+  #echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
 }
 
 preinst ()
@@ -62,10 +62,6 @@ postinst ()
   # get DNS
   sIPDNS=`/usr/syno/sbin/synonet --show | grep -m 1 DNS: | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
 
-  installer_log "CFG_FILE ${CFG_FILE}"
-  installer_log "sIPNAS ${sIPNAS}"
-  installer_log "sIPDNS ${sIPDNS}"
-
   # Edit the configuration according to the wizard or system settings
   sed -i -e "s|%logpath%|${INSTALL_DIR}/var|g" "${CFG_FILE}"
   sed -i -e "s|%ip_dnsmaster%|${sIPDNS}|g" "${CFG_FILE}"
@@ -90,7 +86,6 @@ postinst ()
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}
 
-  installer_log "-- postinst done"
   exit 0
 }
 

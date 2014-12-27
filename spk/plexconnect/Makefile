@@ -40,8 +40,8 @@ plexconnect_extra_install: $(STAGING_DIR)/share/PlexConnect
 	install -m 755 -d $(STAGING_DIR)/var
 	install -m 755 -d $(STAGING_DIR)/etc/certificates
 	install -m 644 src/app/config $(STAGING_DIR)/app/config
-	install -m 755 src/app/plexconnect-vhosts.conf $(STAGING_DIR)/etc/plexconnect-vhosts.conf
-	install -m 755 src/app/plexconnect-ssl-vhosts.conf $(STAGING_DIR)/etc/plexconnect-ssl-vhosts.conf
+	install -m 755 src/app/plexconnect-vhosts.conf $(STAGING_DIR)/etc/httpd-vhosts.conf-plexconnect
+	install -m 755 src/app/plexconnect-ssl-vhosts.conf $(STAGING_DIR)/etc/httpd-ssl-vhosts.conf-plexconnect
 	install -m 755 src/app/certificates/* $(STAGING_DIR)/etc/certificates/
 	install -m 755 src/share/PlexConnect/Settings.cfg $(STAGING_DIR)/share/PlexConnect/Settings.cfg
 	install -m 755 -d $(STAGING_DIR)/app/images

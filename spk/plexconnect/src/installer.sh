@@ -7,12 +7,14 @@ DNAME="PlexConnect"
 # Others
 TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 INSTALL_DIR="/usr/local/${PACKAGE}"
-PLEXCONNECT_DIR="${INSTALL_DIR}/share/PlexConnect"
+PLEXCONNECT_DIR="${INSTALL_DIR}/share/${DNAME}"
 CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
 HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"
-PLEX_VHOST="${INSTALL_DIR}/etc/httpd-vhosts.conf-${PACKAGE}"
-PLEX_SSL_VHOST="${INSTALL_DIR}/etc/httpd-ssl-vhosts.conf-${PACKAGE}"
+APACHE_DIR="/etc/httpd"
+HTTPD_CONF_USER="${APACHE_DIR}/conf/httpd.conf-user"
+PLEX_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-vhosts.conf"
+PLEX_SSL_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhosts.conf"
 
 if [ "${pc_internal_dns}" == "true" ]; then
     pc_internal_dns="True"
@@ -78,9 +80,20 @@ postinst ()
   sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
 
   # create symbolic links
-  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/httpd-vhosts.conf-${PACKAGE}"
+  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/conf/extra/${PACKAGE}-vhosts.conf"
   # no HTTPS for now
-  #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/httpd-ssl-vhosts.conf-${PACKAGE}"
+  #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/conf/extra/${PACKAGE}-ssl-vhosts.conf"
+
+  # make a copy of HTTPD_CONF_USER
+  cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
+  # include our VHOST_FILE
+  echo "Include ${HTTPD_CONF}/conf/extra/${PACKAGE}-vhosts.conf" >> ${HTTPD_CONF_USER}
+
+  # make a copy of HTTPD_SSL_CONF_USER
+  #cp ${HTTPD_SSL_CONF_USER} ${HTTPD_SSL_CONF_USER}.bak
+  # include our VHOST_SSL_FILE
+  #echo "Include ${HTTPD_CONF}/conf/extra/${PACKAGE}-ssl-vhosts.conf" >> ${HTTPD_SSL_CONF_USER}
+
   httpd_reload
 
   # Correct the files ownership
@@ -96,11 +109,6 @@ preuninst ()
   if [ "${SYNOPKG_PKG_STATUS}" == "UNINSTALL" ]; then
     # Remove the user (if not upgrading)
     deluser ${PACKAGE}
-
-    rm -f "${HTTPD_CONF}/httpd-vhosts.conf-${PACKAGE}"
-    rm -f "${HTTPD_CONF}/httpd-ssl-vhosts.conf-${PACKAGE}"
-    # restart apache
-    httpd_reload
   fi
 
   exit 0
@@ -110,6 +118,17 @@ postuninst ()
 {
   installer_log "-- postuninst"
   rm -rf ${INSTALL_DIR}
+
+  # remove plexconnect-vhosts.conf
+  sed -i -e "/^Include.*${PACKAGE}-vhosts\.conf$/d" ${HTTPD_CONF_USER}
+  # remove plexconnect-ssl-vhosts.conf
+  #sed -i -e "/^Include.*${PACKAGE}-ssl-vhosts\.conf$/d" ${HTTPD_SSL_CONF_USER}
+
+  rm -rf "${HTTPD_CONF}/conf/extra/${PACKAGE}-vhosts.conf"
+  rm -rf "${HTTPD_CONF}/conf/extra/${PACKAGE}-ssl-vhosts.conf"
+
+  # restart apache
+  httpd_reload
 
   exit 0
 }
@@ -122,7 +141,7 @@ preupgrade ()
   mkdir -p ${TMP_DIR}/${PACKAGE}
 
   # backup plexconnect (could be git copy we need to restore and it contains the settings)
-  installer_log "backup old PlexConnect files"
+  installer_log "backup old ${DNAME} files"
   cp -r ${PLEXCONNECT_DIR} ${TMP_DIR}/${PACKAGE}/
 
   # backup etc
@@ -139,14 +158,14 @@ postupgrade ()
 
   # Restore needed for settings and some files
 
-  if [ -d ${TMP_DIR}/${PACKAGE}/PlexConnect/.git ]; then
+  if [ -d ${TMP_DIR}/${PACKAGE}/${DNAME}/.git ]; then
     installer_log "full restore and git pull to update"
     rm -r {PLEXCONNECT_DIR}
-    mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect ${INSTALL_DIR}/share/
+    mv -f ${TMP_DIR}/${PACKAGE}/${DNAME} ${INSTALL_DIR}/share/
     git --git-dir=${PLEXCONNECT_DIR}/.git pull || true
   else
     installer_log "restore only configuration"
-    mv -f ${TMP_DIR}/${PACKAGE}/PlexConnect/*.cfg ${PLEXCONNECT_DIR}/
+    mv -f ${TMP_DIR}/${PACKAGE}/${DNAME}/*.cfg ${PLEXCONNECT_DIR}/
   fi
 
   # restore certificates

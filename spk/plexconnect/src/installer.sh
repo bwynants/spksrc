@@ -80,19 +80,19 @@ postinst ()
   sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
 
   # create symbolic links
-  ln -s "${PLEX_VHOST}" "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf"
+  ln -s "${PLEX_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
   # no HTTPS for now
-  #  ln -s "${PLEX_SSL_VHOST}" "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-ssl-vhosts.conf"
+  #  ln -s "${PLEX_SSL_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
 
   # make a copy of HTTPD_CONF_USER
   cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
   # include our VHOST_FILE
-  echo "Include ${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf" >> ${HTTPD_CONF_USER}
+  echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}" >> ${HTTPD_CONF_USER}
 
   # make a copy of HTTPD_SSL_CONF_USER
   #cp ${HTTPD_SSL_CONF_USER} ${HTTPD_SSL_CONF_USER}.bak
   # include our VHOST_SSL_FILE
-  #echo "Include ${APACHE_DIR}/sites-enabled-user/${PACKAGE}-ssl-vhosts.conf" >> ${HTTPD_SSL_CONF_USER}
+  #echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}" >> ${HTTPD_SSL_CONF_USER}
 
   httpd_reload
 
@@ -124,8 +124,8 @@ postuninst ()
   # remove plexconnect-ssl-vhosts.conf
   #sed -i -e "/^Include.*${PACKAGE}-ssl-vhosts\.conf$/d" ${HTTPD_SSL_CONF_USER}
 
-  rm -rf "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf"
-  rm -rf "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-ssl-vhosts.conf"
+  rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
+  rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
 
   # restart apache
   httpd_reload

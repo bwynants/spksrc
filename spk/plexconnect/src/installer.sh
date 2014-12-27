@@ -119,11 +119,10 @@ postuninst ()
   installer_log "-- postuninst"
   rm -rf ${INSTALL_DIR}
 
-  # remove plexconnect-vhosts.conf
-  sed -i -e "/^Include ${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}$/d" ${HTTPD_CONF_USER}
-  # remove plexconnect-ssl-vhosts.conf
-  #sed -i -e "/^Include ${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}$/d" ${HTTPD_SSL_CONF_USER}
+  # remove httpd-vhosts.conf-plexconnect and httpd-ssl-vhosts.conf-plexconnect
+  sed -i -e "/^Include *-vhosts.conf-${PACKAGE}$/d" ${HTTPD_CONF_USER}
 
+  #remove symbolic links
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
 

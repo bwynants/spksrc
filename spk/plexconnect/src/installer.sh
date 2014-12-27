@@ -11,8 +11,8 @@ PLEXCONNECT_DIR="${INSTALL_DIR}/share/PlexConnect"
 CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
 HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"
-PLEX_VHOST="${INSTALL_DIR}/etc/httpd-vhosts.conf-plex"
-PLEX_SSL_VHOST="${INSTALL_DIR}/etc/httpd-ssl-vhosts.conf-plex"
+PLEX_VHOST="${INSTALL_DIR}/etc/httpd-vhosts.conf-${PACKAGE}"
+PLEX_SSL_VHOST="${INSTALL_DIR}/etc/httpd-ssl-vhosts.conf-${PACKAGE}"
 
 if [ "${pc_internal_dns}" == "true" ]; then
     pc_internal_dns="True"
@@ -78,9 +78,9 @@ postinst ()
   sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
 
   # create symbolic links
-  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
+  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/httpd-vhosts.conf-${PACKAGE}"
   # no HTTPS for now
-  #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
+  #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/httpd-ssl-vhosts.conf-${PACKAGE}"
   httpd_reload
 
   # Correct the files ownership
@@ -97,8 +97,8 @@ preuninst ()
     # Remove the user (if not upgrading)
     deluser ${PACKAGE}
 
-    rm -f "${HTTPD_CONF}/${PACKAGE}-vhost.conf"
-    rm -f "${HTTPD_CONF}/${PACKAGE}-ssl-vhost.conf"
+    rm -f "${HTTPD_CONF}/httpd-vhosts.conf-${PACKAGE}"
+    rm -f "${HTTPD_CONF}/httpd-ssl-vhosts.conf-${PACKAGE}"
     # restart apache
     httpd_reload
   fi

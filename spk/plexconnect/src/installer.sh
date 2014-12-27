@@ -120,7 +120,7 @@ postuninst ()
   rm -rf ${INSTALL_DIR}
 
   # remove httpd-vhosts.conf-plexconnect and httpd-ssl-vhosts.conf-plexconnect
-  sed -i -e "/^Include *-vhosts.conf-${PACKAGE}$/d" ${HTTPD_CONF_USER}
+  sed -i -e "/^Include .*-vhosts.conf-${PACKAGE}$/d" ${HTTPD_CONF_USER}
 
   #remove symbolic links
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"

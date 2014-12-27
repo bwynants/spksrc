@@ -9,8 +9,8 @@ TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 INSTALL_DIR="/usr/local/${PACKAGE}"
 PLEXCONNECT_DIR="${INSTALL_DIR}/share/${DNAME}"
 CFG_FILE="${PLEXCONNECT_DIR}/Settings.cfg"
-HTTPD_CONF="/etc/httpd/sites-enabled-user"
 INSTALLER_LOG="/tmp/installer.log"
+
 APACHE_DIR="/etc/httpd"
 HTTPD_CONF_USER="${APACHE_DIR}/conf/httpd.conf-user"
 PLEX_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-vhosts.conf"
@@ -80,19 +80,19 @@ postinst ()
   sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
 
   # create symbolic links
-  ln -s "${PLEX_VHOST}" "${HTTPD_CONF}/conf/extra/${PACKAGE}-vhosts.conf"
+  ln -s "${PLEX_VHOST}" "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf"
   # no HTTPS for now
-  #  ln -s "${PLEX_SSL_VHOST}" "${HTTPD_CONF}/conf/extra/${PACKAGE}-ssl-vhosts.conf"
+  #  ln -s "${PLEX_SSL_VHOST}" "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-ssl-vhosts.conf"
 
   # make a copy of HTTPD_CONF_USER
   cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
   # include our VHOST_FILE
-  echo "Include ${HTTPD_CONF}/conf/extra/${PACKAGE}-vhosts.conf" >> ${HTTPD_CONF_USER}
+  echo "Include ${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf" >> ${HTTPD_CONF_USER}
 
   # make a copy of HTTPD_SSL_CONF_USER
   #cp ${HTTPD_SSL_CONF_USER} ${HTTPD_SSL_CONF_USER}.bak
   # include our VHOST_SSL_FILE
-  #echo "Include ${HTTPD_CONF}/conf/extra/${PACKAGE}-ssl-vhosts.conf" >> ${HTTPD_SSL_CONF_USER}
+  #echo "Include ${APACHE_DIR}/sites-enabled-user/${PACKAGE}-ssl-vhosts.conf" >> ${HTTPD_SSL_CONF_USER}
 
   httpd_reload
 
@@ -124,8 +124,8 @@ postuninst ()
   # remove plexconnect-ssl-vhosts.conf
   #sed -i -e "/^Include.*${PACKAGE}-ssl-vhosts\.conf$/d" ${HTTPD_SSL_CONF_USER}
 
-  rm -rf "${HTTPD_CONF}/conf/extra/${PACKAGE}-vhosts.conf"
-  rm -rf "${HTTPD_CONF}/conf/extra/${PACKAGE}-ssl-vhosts.conf"
+  rm -rf "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf"
+  rm -rf "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-ssl-vhosts.conf"
 
   # restart apache
   httpd_reload

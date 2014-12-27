@@ -12,7 +12,7 @@ MAINTAINER = bwynants
 DESCRIPTION = PlexConnect: Plex @ aTV - think different. Package to show Plex content on your unhacked AppleTV 2 or 3.
 RELOAD_UI = yes
 DISPLAY_NAME = PlexConnect
-CHANGELOG = "Better integration with synology to survive DSM updates"
+CHANGELOG = "different channels to take over"
 HELPURL = http://forums.plexapp.com/index.php/topic/72356-plexconnect-on-synology/
 HOMEPAGE   = https://github.com/iBaa/PlexConnect
 LICENSE    = GPL
@@ -40,8 +40,8 @@ plexconnect_extra_install: $(STAGING_DIR)/share/PlexConnect
 	install -m 755 -d $(STAGING_DIR)/var
 	install -m 755 -d $(STAGING_DIR)/etc/certificates
 	install -m 644 src/app/config $(STAGING_DIR)/app/config
-	install -m 755 src/app/httpd-vhosts.conf-plexconnect $(STAGING_DIR)/etc/httpd-vhosts.conf-plexconnect
-	install -m 755 src/app/httpd-ssl-vhosts.conf-plexconnect $(STAGING_DIR)/etc/httpd-ssl-vhosts.conf-plexconnect
+	install -m 755 src/app/plexconnect-vhosts.conf $(STAGING_DIR)/app/plexconnect-vhosts.conf
+	install -m 755 src/app/plexconnect-ssl-vhosts.conf $(STAGING_DIR)/app/plexconnect-ssl-vhosts.conf
 	install -m 755 src/app/certificates/* $(STAGING_DIR)/etc/certificates/
 	install -m 755 src/share/PlexConnect/Settings.cfg $(STAGING_DIR)/share/PlexConnect/Settings.cfg
 	install -m 755 -d $(STAGING_DIR)/app/images

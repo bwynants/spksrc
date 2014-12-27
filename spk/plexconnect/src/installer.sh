@@ -120,9 +120,9 @@ postuninst ()
   rm -rf ${INSTALL_DIR}
 
   # remove plexconnect-vhosts.conf
-  sed -i -e "/^Include.*${PACKAGE}-vhosts\.conf$/d" ${HTTPD_CONF_USER}
+  sed -i -e "/^Include ${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}$/d" ${HTTPD_CONF_USER}
   # remove plexconnect-ssl-vhosts.conf
-  #sed -i -e "/^Include.*${PACKAGE}-ssl-vhosts\.conf$/d" ${HTTPD_SSL_CONF_USER}
+  #sed -i -e "/^Include ${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}$/d" ${HTTPD_SSL_CONF_USER}
 
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"

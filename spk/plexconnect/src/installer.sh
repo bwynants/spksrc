@@ -55,6 +55,9 @@ postinst ()
   # Create user
   adduser -h ${INSTALL_DIR} -g "${DNAME} User" -G users -s /bin/sh -S -D ${PACKAGE}
 
+  # cleanup leftover from older installer
+  rm -rf "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf"
+
   # Create the certificates
   #openssl req -new -nodes -newkey rsa:2048 -out "${INSTALL_DIR}/etc/certificates/${cert_name}.pem" -keyout "${INSTALL_DIR}/etc/certificates/${cert_name}.key" -x509 -days 7300 -subj "/C=US/CN=${pc_host_name}"
   #openssl x509 -in "${INSTALL_DIR}/etc/certificates/${cert_name}.pem" -outform der -out "${INSTALL_DIR}/etc/certificates/${cert_name}.cer" && cat "${INSTALL_DIR}/etc/certificates/${cert_name}.key" >> "${INSTALL_DIR}/etc/certificates/${cert_name}.pem"

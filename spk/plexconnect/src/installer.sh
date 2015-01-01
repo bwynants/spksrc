@@ -34,6 +34,10 @@ httpd_reload() {
   /usr/syno/sbin/synoservicecfg --reload httpd-user
 }
 
+httpd_restart() {
+  /usr/syno/sbin/synoservicecfg --restart httpd-user
+}
+
 installer_log() {
   return
   #echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
@@ -97,7 +101,7 @@ postinst ()
   # include our VHOST_SSL_FILE
   #echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}" >> ${HTTPD_SSL_CONF_USER}
 
-  httpd_reload
+  httpd_restart
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}
@@ -130,7 +134,7 @@ postuninst ()
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
 
   # restart apache
-  httpd_reload
+  httpd_restart
 
   exit 0
 }
@@ -183,7 +187,7 @@ postupgrade ()
   fi
 
   # restart apache
-  httpd_reload
+  httpd_restart
 
   # remove temp files
   rm -fr ${TMP_DIR}/${PACKAGE}

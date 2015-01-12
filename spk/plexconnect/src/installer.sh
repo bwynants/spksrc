@@ -166,7 +166,7 @@ postupgrade ()
 
   if [ -d ${TMP_DIR}/${PACKAGE}/${DNAME}/.git ]; then
     installer_log "full restore and git pull to update"
-    rm -r {PLEXCONNECT_DIR}
+    rm -r ${PLEXCONNECT_DIR}
     mv -f ${TMP_DIR}/${PACKAGE}/${DNAME} ${INSTALL_DIR}/share/
     git --git-dir=${PLEXCONNECT_DIR}/.git pull || true
   else

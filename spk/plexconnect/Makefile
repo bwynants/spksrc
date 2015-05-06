@@ -1,6 +1,6 @@
 SPK_NAME = plexconnect
 SPK_VERS = 0.5
-SPK_REV = 8
+SPK_REV = 9
 #BETA=1
 SPK_ICON = src/plexconnect.png
 DSM_UI_DIR = app
@@ -12,7 +12,7 @@ MAINTAINER = bwynants
 DESCRIPTION = PlexConnect: Plex @ aTV - think different. Package to show Plex content on your unhacked AppleTV 2 or 3.
 RELOAD_UI = yes
 DISPLAY_NAME = PlexConnect
-CHANGELOG = "Possibility for Trailers or WSJ Live app"
+CHANGELOG = "First attempt at Plex Mix
 HELPURL = http://forums.plexapp.com/index.php/topic/72356-plexconnect-on-synology/
 HOMEPAGE   = https://github.com/iBaa/PlexConnect
 LICENSE    = GPL
@@ -53,6 +53,6 @@ plexconnect_extra_install: $(STAGING_DIR)/share/PlexConnect
 $(STAGING_DIR)/share/PlexConnect:
 	install -m 755 -d $(STAGING_DIR)/share
 	cd $(STAGING_DIR)/share && git clone --single-branch -b master https://github.com/iBaa/PlexConnect.git
-	cd $(STAGING_DIR)/share/PlexConnect && git checkout 127205adebd3faf7f2fc0a9b9f5e0c3827b5e4fc
+	cd $(STAGING_DIR)/share/PlexConnect && git checkout 1f9878f13ed95b14bfa4ef82f1ac8642dfcfec8c
 	# cd $(STAGING_DIR)/share/PlexConnect && git am < $(STAGING_DIR)/../../src/share/PlexConnect/patch.diff
 	rm -fr $(STAGING_DIR)/share/PlexConnect/.git $(STAGING_DIR)/share/PlexConnect/.gitignore

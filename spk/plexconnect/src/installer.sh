@@ -23,7 +23,7 @@ else
 fi
 
 if [ "${pc_host_marketwatch}" == "true" ]; then
-    pc_host_name="secure.marketwatch.com" && cert_name="marketwatch"
+    pc_host_name="video-api-secure.wsj.com" && cert_name="marketwatch"
 elif [ "${pc_host_imovie}" == "true" ]; then
     pc_host_name="www.icloud.com"         && cert_name="icloud"
 else

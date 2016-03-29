@@ -15,6 +15,8 @@ APACHE_DIR="/etc/httpd"
 HTTPD_CONF_USER="${APACHE_DIR}/conf/httpd.conf-user"
 PLEX_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-vhosts.conf"
 PLEX_SSL_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhosts.conf"
+PLEX_NGINX_CONFIG="${INSTALL_DIR}/etc/nginx/${PACKAGE}.conf"
+
 
 if [ "${pc_internal_dns}" == "true" ]; then
     pc_internal_dns="True"
@@ -31,11 +33,11 @@ else
 fi
 
 httpd_reload() {
-  /usr/syno/sbin/synoservicecfg --reload httpd-user
+#  /usr/syno/sbin/synoservicecfg --reload httpd-user
 }
 
 httpd_restart() {
-  /usr/syno/sbin/synoservicecfg --restart httpd-user
+#  /usr/syno/sbin/synoservicecfg --restart httpd-user
 }
 
 installer_log() {
@@ -78,23 +80,31 @@ postinst ()
   sed -i -e "s|%hosttointercept%|${pc_host_name}|g" "${CFG_FILE}"
   sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"
 
-  sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_VHOST}"
-  sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_VHOST}"
-  sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_VHOST}"
+  #sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_VHOST}"
+  #sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_VHOST}"
+  #sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_VHOST}"
 
-  sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_SSL_VHOST}"
-  sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_SSL_VHOST}"
-  sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
+  #sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_SSL_VHOST}"
+  #sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_SSL_VHOST}"
+  #sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
 
-  # create symbolic links
-  ln -s "${PLEX_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
-  # no HTTPS for now
+
+  ## create symbolic links
+  #ln -s "${PLEX_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
+  ## no HTTPS for now
   #  ln -s "${PLEX_SSL_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
+  ## make a copy of HTTPD_CONF_USER
+  # cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
+  ## include our VHOST_FILE
+  #echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}" >> ${HTTPD_CONF_USER}
 
-  # make a copy of HTTPD_CONF_USER
-  cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
-  # include our VHOST_FILE
-  echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}" >> ${HTTPD_CONF_USER}
+
+  sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_NGINX_CONFIG}"
+  sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_NGINX_CONFIG}"
+  sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_NGINX_CONFIG}"
+
+  ln -s "${PLEX_NGINX_CONFIG}" "/etc/nginx/sites-enabled/${PACKAGE}.conf"
+
 
   # make a copy of HTTPD_SSL_CONF_USER
   #cp ${HTTPD_SSL_CONF_USER} ${HTTPD_SSL_CONF_USER}.bak
@@ -129,9 +139,12 @@ postuninst ()
   # remove httpd-vhosts.conf-plexconnect and httpd-ssl-vhosts.conf-plexconnect
   sed -i -e "/^Include .*-vhosts.conf-${PACKAGE}$/d" ${HTTPD_CONF_USER}
 
-  #remove symbolic links
+  #cleanup leftover from older installer
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
   rm -rf "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
+  
+  #new installer
+  rm -rf "/etc/nginx/sites-enabled/${PACKAGE}.conf"
 
   # restart apache
   httpd_restart

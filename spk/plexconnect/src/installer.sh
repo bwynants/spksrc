@@ -15,7 +15,7 @@ APACHE_DIR="/etc/httpd"
 HTTPD_CONF_USER="${APACHE_DIR}/conf/httpd.conf-user"
 PLEX_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-vhosts.conf"
 PLEX_SSL_VHOST="${INSTALL_DIR}/etc/${PACKAGE}-ssl-vhosts.conf"
-PLEX_NGINX_CONFIG="${INSTALL_DIR}/etc/nginx/${PACKAGE}.conf"
+PLEX_NGINX_CONFIG="${INSTALL_DIR}/etc/${PACKAGE}.conf"
 
 
 if [ "${pc_internal_dns}" == "true" ]; then

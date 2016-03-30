@@ -1,6 +1,6 @@
 SPK_NAME = plexconnect
 SPK_VERS = 0.5
-SPK_REV = 14
+SPK_REV = 15
 #BETA=1
 SPK_ICON = src/plexconnect.png
 DSM_UI_DIR = app
@@ -16,7 +16,7 @@ CHANGELOG = "DSM 6.0 support"
 HELPURL = http://forums.plexapp.com/index.php/topic/72356-plexconnect-on-synology/
 HOMEPAGE   = https://github.com/iBaa/PlexConnect
 LICENSE    = GPL
-INSTUNINST_RESTART_SERVICES = "apache-web"
+INSTUNINST_RESTART_SERVICES = "nginx"
 WIZARDS_DIR = src/wizard/
 
 INSTALLER_SCRIPT = src/installer.sh

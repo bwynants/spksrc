@@ -33,7 +33,8 @@ else
 fi
 
 installer_log() {
-  echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
+  return
+  #echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
 }
 
 preinst ()

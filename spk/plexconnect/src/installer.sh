@@ -32,17 +32,8 @@ else
     pc_host_name="trailers.apple.com"     && cert_name="trailers"
 fi
 
-httpd_reload() {
-#  /usr/syno/sbin/synoservicecfg --reload httpd-user
-}
-
-httpd_restart() {
-#  /usr/syno/sbin/synoservicecfg --restart httpd-user
-}
-
 installer_log() {
-  return
-  #echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
+  echo "INSTALLER: ${1}" >> "${INSTALLER_LOG}"
 }
 
 preinst ()
@@ -80,39 +71,11 @@ postinst ()
   sed -i -e "s|%hosttointercept%|${pc_host_name}|g" "${CFG_FILE}"
   sed -i -e "s|%certfile%|${INSTALL_DIR}/etc/certificates/${cert_name}.pem|g" "${CFG_FILE}"
 
-  #sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_VHOST}"
-  #sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_VHOST}"
-  #sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_VHOST}"
-
-  #sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_SSL_VHOST}"
-  #sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_SSL_VHOST}"
-  #sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_SSL_VHOST}"
-
-
-  ## create symbolic links
-  #ln -s "${PLEX_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}"
-  ## no HTTPS for now
-  #  ln -s "${PLEX_SSL_VHOST}" "${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}"
-  ## make a copy of HTTPD_CONF_USER
-  # cp ${HTTPD_CONF_USER} ${HTTPD_CONF_USER}.bak
-  ## include our VHOST_FILE
-  #echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-vhosts.conf-${PACKAGE}" >> ${HTTPD_CONF_USER}
-
-
   sed -i -e "s|%cert_name%|${cert_name}|g" "${PLEX_NGINX_CONFIG}"
   sed -i -e "s|%pc_host_name%|${pc_host_name}|g" "${PLEX_NGINX_CONFIG}"
   sed -i -e "s|%pc_ip_nas%|${sIPNAS}|g" "${PLEX_NGINX_CONFIG}"
-
   ln -s "${PLEX_NGINX_CONFIG}" "/etc/nginx/sites-enabled/${PACKAGE}.conf"
-
-
-  # make a copy of HTTPD_SSL_CONF_USER
-  #cp ${HTTPD_SSL_CONF_USER} ${HTTPD_SSL_CONF_USER}.bak
-  # include our VHOST_SSL_FILE
-  #echo "Include ${APACHE_DIR}/sites-enabled-user/httpd-ssl-vhosts.conf-${PACKAGE}" >> ${HTTPD_SSL_CONF_USER}
-
-  httpd_restart
-
+  
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}
 
@@ -145,9 +108,6 @@ postuninst ()
   
   #new installer
   rm -rf "/etc/nginx/sites-enabled/${PACKAGE}.conf"
-
-  # restart apache
-  httpd_restart
 
   exit 0
 }
@@ -198,9 +158,6 @@ postupgrade ()
     installer_log "restore certificates"
     mv -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ${INSTALL_DIR}/etc/
   fi
-
-  # restart apache
-  httpd_restart
 
   # remove temp files
   rm -fr ${TMP_DIR}/${PACKAGE}

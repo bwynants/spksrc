@@ -161,7 +161,7 @@ postupgrade ()
   #fi
 
   # remove temp files
-  #rm -fr ${TMP_DIR}/${PACKAGE}
+  rm -fr ${TMP_DIR}/${PACKAGE}
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}

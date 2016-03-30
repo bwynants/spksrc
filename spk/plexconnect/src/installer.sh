@@ -127,7 +127,7 @@ preupgrade ()
   # backup etc
   installer_log "backup etc"
   mkdir -p ${TMP_DIR}/${PACKAGE}/etc
-  cp ${INSTALL_DIR}/etc/* ${TMP_DIR}/${PACKAGE}/etc
+  cp -r ${INSTALL_DIR}/etc/* ${TMP_DIR}/${PACKAGE}/etc
 
   exit 0
 }
@@ -161,7 +161,7 @@ postupgrade ()
   #fi
 
   # remove temp files
-  rm -fr ${TMP_DIR}/${PACKAGE}
+  #rm -fr ${TMP_DIR}/${PACKAGE}
 
   # Correct the files ownership
   chown -R ${PACKAGE}:root ${SYNOPKG_PKGDEST}

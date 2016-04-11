@@ -1,22 +1,25 @@
-
-
 PKG_NAME = umurmur
-PKG_VERS = 0.2.8
+PKG_VERS = 0.2.16
 PKG_EXT = tar.gz
-PKG_DIST_NAME = $(PKG_NAME)-$(PKG_VERS).$(PKG_EXT)
-PKG_DIST_SITE = http://umurmur.googlecode.com/files
+PKG_DIST_FILE = $(PKG_NAME)-$(PKG_VERS).$(PKG_EXT)
+PKG_DIST_NAME = $(PKG_VERS).$(PKG_EXT)
+PKG_DIST_SITE = https://github.com/umurmur/umurmur/archive
 PKG_DIR = $(PKG_NAME)-$(PKG_VERS)
 
-DEPENDS = cross/libconfig cross/protobuf-c cross/polarssl
+DEPENDS = cross/libconfig cross/protobuf-c cross/openssl
 
-MAINTAINER = packages@packages.nas-forum.com
-HOMEPAGE   = http://code.google.com/p/umurmur/
-COMMENT    = Minimalistic Mumble server
-LICENSE    =
+HOMEPAGE = https://github.com/umurmur/umurmur
+COMMENT  = Minimalistic Murmur (Mumble server)
+LICENSE  =
+PRE_CONFIGURE_TARGET = myPreConfigure
 
 GNU_CONFIGURE = 1
-CONFIGURE_ARGS = 
-
-INSTALL_PREFIX  = /usr/local/$(PKG_NAME)
+CONFIGURE_ARGS = --with-ssl=openssl
 
 include ../../mk/spksrc.cross-cc.mk
+
+
+.PHONY: myPreConfigure
+myPreConfigure:
+	$(RUN) ./autogen.sh
+

@@ -1,175 +1,172 @@
 #!/bin/sh
 
-#########################################
-# A few variables to make things readable
-
-# Package specific variables
+# Package
 PACKAGE="transmission"
 DNAME="Transmission"
-TR_UTILS="transmission-cli transmission-create transmission-edit \
-          transmission-remote transmission-show" 
 
-# Common variables
+# Others
 INSTALL_DIR="/usr/local/${PACKAGE}"
-VAR_DIR="/usr/local/var/${PACKAGE}"
-UPGRADE="/tmp/${PACKAGE}.upgrade"
-PATH="${INSTALL_DIR}/bin:/bin:/usr/bin" # Avoid ipkg commands
+SSS="/var/packages/${PACKAGE}/scripts/start-stop-status"
+PATH="${INSTALL_DIR}/bin:${PATH}"
+USER="transmission"
+GROUP="users"
+CFG_FILE="${INSTALL_DIR}/var/settings.json"
+TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 
-SYNOUSER="/usr/syno/sbin/synouser"
+SERVICETOOL="/usr/syno/bin/servicetool"
+FWPORTS="/var/packages/${PACKAGE}/scripts/${PACKAGE}.sc"
 
-SYNO3APP="/usr/syno/synoman/webman/3rdparty"
+SYNO_GROUP="sc-download"
+SYNO_GROUP_DESC="SynoCommunity's download related group"
 
-#########################################
-# DSM package manager functions
+syno_group_create ()
+{
+    # Create syno group (Does nothing when group already exists)
+    synogroup --add ${SYNO_GROUP} ${USER} > /dev/null
+    # Set description of the syno group
+    synogroup --descset ${SYNO_GROUP} "${SYNO_GROUP_DESC}"
+
+    # Add user to syno group (Does nothing when user already in the group)
+    addgroup ${USER} ${SYNO_GROUP}
+}
+
+syno_group_remove ()
+{
+    # Remove user from syno group
+    delgroup ${USER} ${SYNO_GROUP}
+
+    # Check if syno group is empty
+    if ! synogroup --get ${SYNO_GROUP} | grep -q "0:"; then
+        # Remove syno group
+        synogroup --del ${SYNO_GROUP} > /dev/null
+    fi
+}
 
 preinst ()
 {
+    if [ "${SYNOPKG_PKG_STATUS}" == "INSTALL" ]; then
+        if [ ! -d "${wizard_download_dir}" ]; then
+            echo "Download directory ${wizard_download_dir} does not exist."
+            exit 1
+        fi
+        if [ -n "${wizard_watch_dir}" -a ! -d "${wizard_watch_dir}" ]; then
+            echo "Watch directory ${wizard_watch_dir} does not exist."
+            exit 1
+        fi
+        if [ -n "${wizard_incomplete_dir}" -a ! -d "${wizard_incomplete_dir}" ]; then
+            echo "Incomplete directory ${wizard_incomplete_dir} does not exist."
+            exit 1
+        fi
+    fi
+
     exit 0
 }
 
 postinst ()
 {
-    # Installation directories
-    mkdir -p ${INSTALL_DIR}
-    mkdir -p ${VAR_DIR}
-    mkdir -p /usr/local/bin
+    # Link
+    ln -s ${SYNOPKG_PKGDEST} ${INSTALL_DIR}
 
-    # Remove the DSM user
-    if ${SYNOUSER} --enum local | grep "^${PACKAGE}$" >/dev/null
-    then
-    	# Keep the existing uid
-        uid=`grep ${PACKAGE} /etc/passwd | cut -d: -f3`
-        ${SYNOUSER} --del ${PACKAGE} 2> /dev/null
-        UID_PARAM="-u ${uid}"
-    fi
-
-    # Extract the files to the installation directory
-    ${SYNOPKG_PKGDEST}/bin/xzdec -c ${SYNOPKG_PKGDEST}/package.txz | \
-        tar xpf - -C ${INSTALL_DIR}
-    # Remove the installer archive to save space
-    rm ${SYNOPKG_PKGDEST}/package.txz
-
-    # Create symlinks to utils
-    for exe in ${TR_UTILS}
-    do
-      ln -s ${INSTALL_DIR}/bin/${exe} /usr/local/bin/${exe}
-    done
-    ln -s /var/packages/${PACKAGE}/scripts/start-stop-status /usr/local/bin/${PACKAGE}-ctl 
-
-    # Install the application in the main interface.
-    if [ -d ${SYNO3APP} ]
-    then
-        rm -f ${SYNO3APP}/${PACKAGE}
-        ln -s ${INSTALL_DIR}/share/synoman ${SYNO3APP}/${PACKAGE}
-    fi
-
-    # Copy the default configuration if needed
-    if [ -f ${VAR_DIR}/settings.json ]
-    then
-        true
-    else
-        # No config file, copy default one
-        cp ${SYNOPKG_PKGDEST}/var/settings.json ${VAR_DIR}/settings.json
-    fi
-
-    # Update the configuration file
-    ${INSTALL_DIR}/bin/transmission-daemon -g ${VAR_DIR}/ -d 2> ${VAR_DIR}/new.settings.json 
-    mv ${VAR_DIR}/new.settings.json ${VAR_DIR}/settings.json
-    chmod 600 ${VAR_DIR}/settings.json
-
-    # Install the adduser and deluser hardlinks
+    # Install busybox stuff
     ${INSTALL_DIR}/bin/busybox --install ${INSTALL_DIR}/bin
 
-    # Create the service user if needed
-    if grep "^${PACKAGE}:" /etc/passwd >/dev/null
-    then
-        true
-    else
-        adduser -h ${VAR_DIR} -g "${DNAME} User" -G users -D -H ${UID_PARAM} -s /bin/sh ${PACKAGE}
+    # Create user
+    adduser -h ${INSTALL_DIR}/var -g "${DNAME} User" -G ${GROUP} -s /bin/sh -S -D ${USER}
+
+    if [ "${SYNOPKG_PKG_STATUS}" == "INSTALL" ]; then
+        # Edit the configuration according to the wizard
+        sed -i -e "s|@download_dir@|${wizard_download_dir:=/volume1/downloads}|g" ${CFG_FILE}
+        sed -i -e "s|@username@|${wizard_username:=admin}|g" ${CFG_FILE}
+        sed -i -e "s|@password@|${wizard_password:=admin}|g" ${CFG_FILE}
+        if [ -d "${wizard_watch_dir}" ]; then
+            sed -i -e "s|@watch_dir_enabled@|true|g" ${CFG_FILE}
+            sed -i -e "s|@watch_dir@|${wizard_watch_dir}|g" ${CFG_FILE}
+        else
+            sed -i -e "s|@watch_dir_enabled@|false|g" ${CFG_FILE}
+            sed -i -e "/@watch_dir@/d" ${CFG_FILE}
+        fi
+        if [ -d "${wizard_incomplete_dir}" ]; then
+            sed -i -e "s|@incomplete_dir_enabled@|true|g" ${CFG_FILE}
+            sed -i -e "s|@incomplete_dir@|${wizard_incomplete_dir}|g" ${CFG_FILE}
+        else
+            sed -i -e "s|@incomplete_dir_enabled@|false|g" ${CFG_FILE}
+            sed -i -e "/@incomplete_dir@/d" ${CFG_FILE}
+        fi
+
+        # Set group and permissions on download- and watch dir for DSM5
+        if [ `/bin/get_key_value /etc.defaults/VERSION buildnumber` -ge "4418" ]; then
+            chgrp users ${wizard_download_dir:=/volume1/downloads}
+            chmod g+rw ${wizard_download_dir:=/volume1/downloads}
+            if [ -d "${wizard_watch_dir}" ]; then
+                chgrp users ${wizard_watch_dir}
+                chmod g+rw ${wizard_watch_dir}
+            fi
+            if [ -d "${wizard_incomplete_dir}" ]; then
+                chgrp users ${wizard_incomplete_dir}
+                chmod g+rw ${wizard_incomplete_dir}
+            fi
+        fi
     fi
 
-    # Correct the files ownership    
-    chown -Rh ${PACKAGE}:users ${INSTALL_DIR} ${VAR_DIR}
+    syno_group_create
+
+    # Correct the files ownership
+    chown -R ${USER}:root ${SYNOPKG_PKGDEST}
+
+    # Add firewall config
+    ${SERVICETOOL} --install-configure-file --package ${FWPORTS} >> /dev/null
 
     exit 0
 }
 
 preuninst ()
 {
+    # Stop the package
+    ${SSS} stop > /dev/null
+
+    # Remove the user (if not upgrading)
+    if [ "${SYNOPKG_PKG_STATUS}" != "UPGRADE" ]; then
+        syno_group_remove
+
+        delgroup ${USER} ${GROUP}
+        deluser ${USER}
+    fi
+
+    # Remove firewall config
+    if [ "${SYNOPKG_PKG_STATUS}" == "UNINSTALL" ]; then
+        ${SERVICETOOL} --remove-configure-file --package ${PACKAGE}.sc >> /dev/null
+    fi
+
     exit 0
 }
 
 postuninst ()
 {
-    # Keep the user data and settings during the upgrade
-    if [ -f ${UPGRADE} ]
-    then
-        true 
-    else
-        deluser ${PACKAGE}
-        rm -fr ${VAR_DIR}
-    fi
-
-    # Remove the application from the main interface if it was previously added.
-    if [ -h ${SYNO3APP}/${PACKAGE} ]
-    then
-        rm ${SYNO3APP}/${PACKAGE}
-    fi
-
-    # Remove symlinks to utils
-    for exe in ${TR_UTILS}
-    do
-      rm /usr/local/bin/${exe}
-    done
-    rm /usr/local/bin/${PACKAGE}-ctl 
-
-    # Remove the installation directory
-    rm -fr ${INSTALL_DIR}
+    # Remove link
+    rm -f ${INSTALL_DIR}
 
     exit 0
 }
 
 preupgrade ()
 {
-    # Make sure the package is not running while we are upgrading it
-    /usr/local/bin/${PACKAGE}-ctl stop
-    touch ${UPGRADE}
+    # Stop the package
+    ${SSS} stop > /dev/null
 
-    # Make sure the work dir exists
-    mkdir -p ${VAR_DIR}
-    # Save current state before upgrade
-    if [ -d ${SYNOPKG_PKGDEST}/usr ]
-    then
-        # First installation scheme, copy to new
-        mv ${SYNOPKG_PKGDEST}/usr/local/var/lib/transmission-daemon/* ${VAR_DIR}/
-    else
-        if [ -d ${SYNOPKG_PKGDEST}/var ]
-        then
-            # Second installation scheme, copy to new
-            mv ${SYNOPKG_PKGDEST}/var/* ${VAR_DIR}/
-        fi
-    fi
+    # Save some stuff
+    rm -fr ${TMP_DIR}/${PACKAGE}
+    mkdir -p ${TMP_DIR}/${PACKAGE}
+    mv ${INSTALL_DIR}/var ${TMP_DIR}/${PACKAGE}/
+
     exit 0
 }
 
 postupgrade ()
 {
-    # Correct permission and ownership of download directory
-    downloadDir=`grep download-dir ${VAR_DIR}/settings.json | cut -d'"' -f4`
-    if [ -n "${downloadDir}" -a -d "${downloadDir}" ]
-    then
-        chown -Rh transmission:users ${downloadDir}
-        chmod -R g+w ${downloadDir}
-    fi
-
-    # Correct permission and ownership of incomplete directory
-    incompleteDir=`grep incomplete-dir ${VAR_DIR}/settings.json | cut -d'"' -f4`
-    if [ -n "${incompleteDir}" -a -d "${incompleteDir}" ]
-    then
-        chown -Rh transmission:users ${incompleteDir}
-    fi
-
-    rm -f ${UPGRADE}
+    # Restore some stuff
+    rm -fr ${INSTALL_DIR}/var
+    mv ${TMP_DIR}/${PACKAGE}/var ${INSTALL_DIR}/
+    rm -fr ${TMP_DIR}/${PACKAGE}
 
     exit 0
 }

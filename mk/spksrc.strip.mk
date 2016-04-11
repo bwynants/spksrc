@@ -41,7 +41,7 @@ endif
 .PHONY: $(PRE_STRIP_TARGET) $(STRIP_TARGET) $(POST_STRIP_TARGET)
 
 strip_msg:
-	@$(MSG) "Striping binaries and libraries of $(NAME)"
+	@$(MSG) "Stripping binaries and libraries of $(NAME)"
 
 pre_strip_target: strip_msg
 
@@ -49,7 +49,7 @@ strip_target: $(PRE_STRIP_TARGET) $(INSTALL_PLIST)
 	@cat $(INSTALL_PLIST) | sed 's/:/ /' | while read type file ; \
 	do \
 	  case $${type} in \
-	    lib|bin) \
+	    lib|libexec|bin) \
 	      echo -n "Stripping $${file}... " ; \
 	      chmod u+w $(STAGING_DIR)/$${file} ; \
 	      $(STRIP) $(STAGING_DIR)/$${file} > /dev/null 2>&1 && echo "ok" || echo "failed!" \

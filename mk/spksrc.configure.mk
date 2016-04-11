@@ -47,7 +47,7 @@ configure_msg:
 pre_configure_target: configure_msg
 
 configure_target:  $(PRE_CONFIGURE_TARGET)
-	$(RUN) ./configure $(REAL_CONFIGURE_ARGS) 
+	$(RUN) ./configure $(REAL_CONFIGURE_ARGS)
 
 post_configure_target: $(CONFIGURE_TARGET)
 
@@ -60,3 +60,4 @@ $(CONFIGURE_COOKIE): $(POST_CONFIGURE_TARGET)
 else
 configure: ;
 endif
+

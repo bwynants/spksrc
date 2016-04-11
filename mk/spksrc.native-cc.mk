@@ -35,12 +35,35 @@ include ../../mk/spksrc.configure.mk
 compile: configure
 include ../../mk/spksrc.compile.mk
 
+install: compile
+include ../../mk/spksrc.install.mk
+
 .PHONY: cat_PLIST
 cat_PLIST:
 	@true
+
+dependency-tree:
+	@echo `perl -e 'print "\\\t" x $(MAKELEVEL),"\n"'`+ $(NAME) $(PKG_VERS)
+	@for depend in $(DEPENDS) ; \
+	do \
+	  $(MAKE) --no-print-directory -C ../../$$depend dependency-tree ; \
+	done
 
 ### Clean rules
 clean:
 	rm -fr $(WORK_DIR)
 
-all: compile
+all: install
+
+.PHONY: kernel-required
+kernel-required:
+	@if [ -n "$(REQ_KERNEL)" ]; then \
+	  exit 1 ; \
+	fi
+	@for depend in $(DEPENDS) ; do \
+	  if $(MAKE) --no-print-directory -C ../../$$depend kernel-required >/dev/null 2>&1 ; then \
+	    exit 0 ; \
+	  else \
+	    exit 1 ; \
+	  fi ; \
+	done

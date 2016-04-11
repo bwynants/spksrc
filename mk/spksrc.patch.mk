@@ -7,11 +7,15 @@
 #  patch_target       (override with PATCH_TARGET)
 #  post_patch_target  (override with POST_PATCH_TARGET)
 # Variables:
+#  PATCHES_LEVEL      Level of the patches to apply
 #  PATCHES            List of patches to apply. If not defined, will apply patch files in the
 #                     patches directory.
 
-ifeq ($(strip $(PATCHES)),) 
-PATCHES = $(wildcard patches/*.patch)
+ifeq ($(strip $(PATCHES_LEVEL)),)
+PATCHES_LEVEL = 0
+endif
+ifeq ($(strip $(PATCHES)),)
+PATCHES = $(sort $(wildcard patches/*.patch))
 endif
 
 PATCH_COOKIE = $(WORK_DIR)/.$(COOKIE_PREFIX)patch_done
@@ -41,11 +45,11 @@ patch_msg:
 pre_patch_target: patch_msg
 
 patch_target: $(PRE_PATCH_TARGET)
-ifneq ($(strip $(PATCHES)),) 
+ifneq ($(strip $(PATCHES)),)
 	@for patchfile in $(PATCHES) ; \
 	do \
-	  echo "patch -p0 < $${patchfile}" ; \
-	  cat $${patchfile} | ($(RUN) patch -p0) ; \
+	  echo "patch -p$(PATCHES_LEVEL) < $${patchfile}" ; \
+	  cat $${patchfile} | ($(RUN) patch -p$(PATCHES_LEVEL)) ; \
 	done
 endif
 
@@ -60,3 +64,4 @@ $(PATCH_COOKIE): $(POST_PATCH_TARGET)
 else
 patch: ;
 endif
+

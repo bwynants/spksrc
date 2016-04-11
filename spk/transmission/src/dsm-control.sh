@@ -1,113 +1,86 @@
 #!/bin/sh
 
-PATH=/bin:/usr/bin
+# Package
+PACKAGE="transmission"
+DNAME="Transmission"
 
-TREXE="/usr/local/transmission/bin/transmission-daemon"
-TRVAR="/usr/local/var/transmission"
-TRPID="$TRVAR/transmission.pid"
-RUNAS="transmission"
+# Others
+INSTALL_DIR="/usr/local/${PACKAGE}"
+PYTHON_DIR="/usr/local/python"
+PATH="${INSTALL_DIR}/bin:${PYTHON_DIR}/bin:${PATH}"
+USER="transmission"
+TRANSMISSION="${INSTALL_DIR}/bin/transmission-daemon"
+PID_FILE="${INSTALL_DIR}/var/transmission.pid"
+
 
 start_daemon ()
 {
-    # Launch transmission in the background.
-    su - $RUNAS -c "$TREXE -g $TRVAR -x $TRPID"
-
-    # Wait until transmission is ready (race condition here).
-    counter=5
-    while [ $counter -gt 0 ]
-    do
-        daemon_status && break
-        let counter=counter-1
-        sleep 1
-    done
+    su - ${USER} -c "PATH=${PATH} ${TRANSMISSION} -g ${INSTALL_DIR}/var/ -x ${PID_FILE}"
 }
 
 stop_daemon ()
 {
-    # Kill transmission.
-    kill `cat $TRPID`
-
-    # Wait until transmission is really dead (may take some time).
-    counter=20
-    while [ $counter -gt 0 ] 
-    do
-        daemon_status || break
-        let counter=counter-1
-        sleep 1
-    done
-}
-
-reload_daemon ()
-{
-    kill -s HUP `cat $TRPID`
+    kill `cat ${PID_FILE}`
+    wait_for_status 1 20 || kill -9 `cat ${PID_FILE}`
+    rm -f ${PID_FILE}
 }
 
 daemon_status ()
 {
-    if [ -f $TRPID ] 
-    then
-        if [ -d /proc/`cat $TRPID` ]
-        then
-            return 0
-        else
-            # PID file exists, but no process has this PID. 
-            rm $TRPID
-    	fi
+    if [ -f ${PID_FILE} ] && kill -0 `cat ${PID_FILE}` > /dev/null 2>&1; then
+        return
     fi
+    rm -f ${PID_FILE}
     return 1
 }
 
-run_in_console ()
+wait_for_status ()
 {
-    su - $RUNAS -c "$TREXE -g $TRVAR -f"
+    counter=$2
+    while [ ${counter} -gt 0 ]; do
+        daemon_status
+        [ $? -eq $1 ] && return
+        let counter=counter-1
+        sleep 1
+    done
+    return 1
 }
+
 
 case $1 in
     start)
-        if daemon_status
-        then
-            echo Transmission daemon already running
+        if daemon_status; then
+            echo ${DNAME} is already running
             exit 0
         else
-            echo Starting Transmission daemon...
+            echo Starting ${DNAME} ...
             start_daemon
             exit $?
         fi
         ;;
     stop)
-        echo Stopping Transmission daemon...
-        stop_daemon
-        exit 0
+        if daemon_status; then
+            echo Stopping ${DNAME} ...
+            stop_daemon
+            exit $?
+        else
+            echo ${DNAME} is not running
+            exit 0
+        fi
         ;;
     restart)
         stop_daemon
         start_daemon
         exit $?
         ;;
-    reload)
-        if daemon_status
-        then
-           reload_daemon
-        fi
-        exit $?
-        ;;
     status)
-        if daemon_status
-        then
-            echo Running
+        if daemon_status; then
+            echo ${DNAME} is running
             exit 0
         else
-            echo Not running
+            echo ${DNAME} is not running
             exit 1
         fi
-        ;;
-    log)
-        echo $LOGFILE
-        exit 0
-        ;;
-    console)
-        run_in_console
-        exit $?
         ;;
     *)
         exit 1

@@ -1,25 +1,48 @@
 #!/bin/sh
 
-#########################################
-# A few variables to make things readable
-
-# Package specific variables
+# Package
 PACKAGE="headphones"
 DNAME="Headphones"
-PYTHON_DIR="/usr/local/python26"
 
-# Common variables
+# Others
 INSTALL_DIR="/usr/local/${PACKAGE}"
-VAR_DIR="/usr/local/var/${PACKAGE}"
-UPGRADE="/tmp/${PACKAGE}.upgrade"
-PATH="${INSTALL_DIR}/sbin:${PYTHON_DIR}/bin:/bin:/usr/bin:/usr/syno/bin" # Avoid ipkg commands
+SSS="/var/packages/${PACKAGE}/scripts/start-stop-status"
+PYTHON_DIR="/usr/local/python"
+PATH="${INSTALL_DIR}/bin:${INSTALL_DIR}/env/bin:${PYTHON_DIR}/bin:${PATH}"
+USER="headphones"
+GROUP="users"
+VIRTUALENV="${PYTHON_DIR}/bin/virtualenv"
+CFG_FILE="${INSTALL_DIR}/var/config.ini"
+TMP_DIR="${SYNOPKG_PKGDEST}/../../@tmp"
 
-SYNOUSER="/usr/syno/sbin/synouser"
+SERVICETOOL="/usr/syno/bin/servicetool"
+FWPORTS="/var/packages/${PACKAGE}/scripts/${PACKAGE}.sc"
 
-SYNO3APP="/usr/syno/synoman/webman/3rdparty"
+SYNO_GROUP="sc-media"
+SYNO_GROUP_DESC="SynoCommunity's media related group"
 
-#########################################
-# DSM package manager functions
+syno_group_create ()
+{
+    # Create syno group (Does nothing when group already exists)
+    synogroup --add ${SYNO_GROUP} ${USER} > /dev/null
+    # Set description of the syno group
+    synogroup --descset ${SYNO_GROUP} "${SYNO_GROUP_DESC}"
+
+    # Add user to syno group (Does nothing when user already in the group)
+    addgroup ${USER} ${SYNO_GROUP}
+}
+
+syno_group_remove ()
+{
+    # Remove user from syno group
+    delgroup ${USER} ${SYNO_GROUP}
+
+    # Check if syno group is empty
+    if ! synogroup --get ${SYNO_GROUP} | grep -q "0:"; then
+        # Remove syno group
+        synogroup --del ${SYNO_GROUP} > /dev/null
+    fi
+}
 
 preinst ()
 {
@@ -28,124 +51,74 @@ preinst ()
 
 postinst ()
 {
-    # Installation directories
-    mkdir -p ${INSTALL_DIR}
-    mkdir -p ${VAR_DIR}
-    mkdir -p /usr/local/bin
+    # Link
+    ln -s ${SYNOPKG_PKGDEST} ${INSTALL_DIR}
 
-    # Remove the DSM user
-    if ${SYNOUSER} --enum local | grep "^${PACKAGE}$" >/dev/null
-    then
-        # Keep the existing uid
-        uid=`grep ${PACKAGE} /etc/passwd | cut -d: -f3`
-        ${SYNOUSER} --del ${PACKAGE} 2> /dev/null
-        UID_PARAM="-u ${uid}"
-    fi
+    # Create a Python virtualenv
+    ${VIRTUALENV} --system-site-packages ${INSTALL_DIR}/env > /dev/null
 
-    # Extract the files to the installation directory
-    ${PYTHON_DIR}/bin/xzdec -c ${SYNOPKG_PKGDEST}/package.txz | \
-        tar xpf - -C ${INSTALL_DIR}
-    # Remove the installer archive to save space
-    rm ${SYNOPKG_PKGDEST}/package.txz
+    # Create user
+    adduser -h ${INSTALL_DIR}/var -g "${DNAME} User" -G ${GROUP} -s /bin/sh -S -D ${USER}
 
-    ln -s /var/packages/Headphones/scripts/start-stop-status /usr/local/bin/${PACKAGE}-ctl 
-
-    # Install the application in the main interface.
-    if [ -d ${SYNO3APP} ]
-    then
-        rm -f ${SYNO3APP}/${PACKAGE}
-        ln -s ${INSTALL_DIR}/share/synoman ${SYNO3APP}/${PACKAGE}
-    fi
-
-    # Download and extract the application from github.
-    (
-      cd /usr/local/var
-      /usr/syno/bin/wget -q --no-check-certificate -O app.tgz https://github.com/rembo10/headphones/tarball/master
-      dest=`tar -tzf app.tgz | head -n1 | cut -d/ -f1`
-      ln -sf ${VAR_DIR} $dest
-      tar xzpf app.tgz
-      rm app.tgz $dest
-      # Clear the current version info
-      rm -f headphones/version.txt headphones/master
-    )
-
-    # Create the configuration file
-    if [ -f ${VAR_DIR}/config.ini ]
-    then
-        true
-    else
-        # No config file, create default one
-        ${SYNOPKG_PKGDEST}/sbin/hpDefaultConfig /usr/local/var/sabnzbd/config.ini > ${VAR_DIR}/config.ini
-    fi
-    # Ensure that only the service user can access this file, as some
-    # password are stored in clear text
-    chmod 600 ${VAR_DIR}/config.ini
-
-    # Create the service user if needed
-    if grep "^${PACKAGE}:" /etc/passwd >/dev/null
-    then
-        true
-    else
-        adduser -h ${VAR_DIR} -g "${DNAME} User" -G users -D -H ${UID_PARAM} -s /bin/sh ${PACKAGE}
-    fi
+    syno_group_create
 
     # Correct the files ownership
-    chown -Rh ${PACKAGE}:users ${INSTALL_DIR} ${VAR_DIR}
+    chown -R ${USER}:root ${SYNOPKG_PKGDEST}
+
+    # Add firewall config
+    ${SERVICETOOL} --install-configure-file --package ${FWPORTS} >> /dev/null
 
     exit 0
 }
 
 preuninst ()
 {
-    # Make sure the package is not running while we are removing it.
-    /usr/local/bin/${PACKAGE}-ctl stop
+    # Stop the package
+    ${SSS} stop > /dev/null
+
+    # Remove the user (if not upgrading)
+    if [ "${SYNOPKG_PKG_STATUS}" != "UPGRADE" ]; then
+        syno_group_remove
+
+        delgroup ${USER} ${GROUP}
+        deluser ${USER}
+    fi
+
+    # Remove firewall config
+    if [ "${SYNOPKG_PKG_STATUS}" == "UNINSTALL" ]; then
+        ${SERVICETOOL} --remove-configure-file --package ${PACKAGE}.sc >> /dev/null
+    fi
 
     exit 0
 }
 
 postuninst ()
 {
-    # Keep the user data and settings during the upgrade
-    if [ -f ${UPGRADE} ]
-    then
-        true 
-    else
-        deluser ${PACKAGE}
-        rm -fr ${VAR_DIR}
-    fi
-
-    # Remove the application from the main interface if it was previously added.
-    if [ -h ${SYNO3APP}/${PACKAGE} ]
-    then
-        rm ${SYNO3APP}/${PACKAGE}
-    fi
-
-    # Remove symlinks to utils
-    rm /usr/local/bin/${PACKAGE}-ctl 
-
-    # Remove the installation directory
-    rm -fr ${INSTALL_DIR}
+    # Remove link
+    rm -f ${INSTALL_DIR}
 
     exit 0
 }
 
 preupgrade ()
 {
-    # The package manager only check the version when installing, not upgrading. So do it here the old way.
-    if [ -e ${PYTHON_DIR}/bin/adduser ]
-    then
-        touch ${UPGRADE}
-    else
-        echo "Please uppdate Python26 before updating this package"
-        false
-    fi
+    # Stop the package
+    ${SSS} stop > /dev/null
 
-    exit $?
+    # Save some stuff
+    rm -fr ${TMP_DIR}/${PACKAGE}
+    mkdir -p ${TMP_DIR}/${PACKAGE}
+    mv ${INSTALL_DIR}/var ${TMP_DIR}/${PACKAGE}/
+
+    exit 0
 }
 
 postupgrade ()
 {
-    rm -f ${UPGRADE}
+    # Restore some stuff
+    rm -fr ${INSTALL_DIR}/var
+    mv ${TMP_DIR}/${PACKAGE}/var ${INSTALL_DIR}/
+    rm -fr ${TMP_DIR}/${PACKAGE}
 
     exit 0
 }

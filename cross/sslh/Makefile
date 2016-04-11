@@ -1,46 +1,23 @@
-
-
 PKG_NAME = sslh
-PKG_VERS = 1.10
+PKG_VERS = 1.17
 PKG_EXT = tar.gz
-PKG_DIST_NAME = $(PKG_NAME)-$(PKG_VERS).$(PKG_EXT)
+PKG_DIST_NAME = $(PKG_NAME)-v$(PKG_VERS).$(PKG_EXT)
 PKG_DIST_SITE = http://www.rutschle.net/tech
-PKG_DIR = $(PKG_NAME)-$(PKG_VERS)
-SRC_DIR= $(WORK_DIR)/$(PKG_NAME)-$(PKG_VERS)/
-VERSION="v1.10"
-DEPENDS = 
+PKG_DIR = $(PKG_NAME)-v$(PKG_VERS)
 
-MAINTAINER = packages@packages.nas-forum.com
-HOMEPAGE   = http://www.rutschle.net/tech/sslh.shtml
-COMMENT    = sslh accepts HTTPS, SSH and OpenVPN connections on the same port
-LICENSE    =
+DEPENDS = cross/libconfig
 
-ADDITIONAL_CFLAGS =
-CONFIGURE_ARGS = 
+HOMEPAGE = http://www.rutschle.net/tech/sslh.shtml
+COMMENT  = sslh accepts HTTPS, SSH and OpenVPN connections on the same port
+LICENSE  = GPLv2
 
-CONFIGURE_TARGET = myConfigure
-COMPILE_TARGET = myCompile
+CONFIGURE_TARGET = nop
 INSTALL_TARGET = myInstall
 
 include ../../mk/spksrc.cross-cc.mk
 
-myConfigure:
-	echo "Configure"
-
-.PHONY: myCompile
-myCompile: $(SRC_DIR)sslh-fork
-
-$(SRC_DIR)sslh-fork: $(SRC_DIR)common.o $(SRC_DIR)sslh-main.o $(SRC_DIR)sslh-fork.o $(SRC_DIR)common.h
-	@$(RUN) $(CC) $(CFLAGS) -D'VERSION=$(VERSION)' -o $(SRC_DIR)sslh-fork $(SRC_DIR)sslh-fork.o $(SRC_DIR)common.o $(SRC_DIR)sslh-main.o $(LIBS)
-
-$(SRC_DIR)common.o : $(SRC_DIR)common.h
-	@$(RUN) $(CC) $(CFLAGS) -D'VERSION=$(VERSION)'  -o $(SRC_DIR)common.o -c $(SRC_DIR)common.c
-
-$(SRC_DIR)sslh-main.o : $(SRC_DIR)common.h
-        @$(RUN) $(CC) $(CFLAGS) -D'VERSION=$(VERSION)'  -o $(SRC_DIR)sslh-main.o -c $(SRC_DIR)sslh-main.c
-
-
+.PHONY: myInstall
 myInstall:
-	echo "Install"
-	@$(RUN) mkdir -p $(WORK_DIR)/install/$(INSTALL_PREFIX)/bin
-	@$(RUN) cp $(SRC_DIR)sslh-fork $(WORK_DIR)/install/$(INSTALL_PREFIX)/bin/sslh
+	@$(RUN) mkdir -p $(STAGING_INSTALL_PREFIX)/bin
+	@$(RUN) cp $(WORK_DIR)/$(PKG_DIR)/sslh-fork $(STAGING_INSTALL_PREFIX)/bin/sslh
+

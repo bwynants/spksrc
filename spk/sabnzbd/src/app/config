@@ -1,0 +1,15 @@
+{
+    ".url": {
+        "com.synocommunity.packages.sabnzbd": {
+            "title": "SABnzbd",
+            "desc": "SABnzbd Web UI",
+            "icon": "images/sabnzbd-{0}.png",
+            "type": "url",
+            "protocol": "http",
+            "url": "/",
+            "port": "8080",
+            "allUsers": true,
+            "grantPrivilege": "local"
+        }
+    }
+}

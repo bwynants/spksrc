@@ -1,0 +1,15 @@
+{
+    ".url": {
+        "com.synocommunity.packages.mylar": {
+            "title": "Mylar",
+            "desc": "Mylar Web UI",
+            "icon": "images/mylar-{0}.png",
+            "type": "url",
+            "protocol": "http",
+            "port": "8090",
+            "url": "/",
+            "allUsers": true,
+            "grantPrivilege": "local"
+        }
+    }
+}

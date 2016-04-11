@@ -1,7 +1,7 @@
 SPK_NAME = plexconnect
 SPK_VERS = 0.5
-SPK_REV = 15
-#BETA=1
+SPK_REV = 16
+BETA=1
 SPK_ICON = src/plexconnect.png
 DSM_UI_DIR = app
 
@@ -43,7 +43,7 @@ plexconnect_extra_install: $(STAGING_DIR)/share/PlexConnect
 #	install -m 755 src/app/plexconnect-vhosts.conf $(STAGING_DIR)/etc/plexconnect-vhosts.conf
 #	install -m 755 src/app/plexconnect-ssl-vhosts.conf $(STAGING_DIR)/etc/plexconnect-ssl-vhosts.conf
 	install -m 755 src/app/plexconnect.conf $(STAGING_DIR)/etc/plexconnect.conf
-	install -m 755 src/app/certificates/* $(STAGING_DIR)/etc/certificates/
+#	install -m 755 src/app/certificates/* $(STAGING_DIR)/etc/certificates/
 	install -m 755 src/share/PlexConnect/Settings.cfg $(STAGING_DIR)/share/PlexConnect/Settings.cfg
 	install -m 755 -d $(STAGING_DIR)/app/images
 	for size in 16 24 32 48; do \

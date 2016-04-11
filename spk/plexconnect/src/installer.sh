@@ -57,8 +57,8 @@ postinst ()
   rm -rf "${APACHE_DIR}/sites-enabled-user/${PACKAGE}-vhosts.conf"
 
   # Create the certificates
-  #openssl req -new -nodes -newkey rsa:2048 -out "${INSTALL_DIR}/etc/certificates/${cert_name}.pem" -keyout "${INSTALL_DIR}/etc/certificates/${cert_name}.key" -x509 -days 7300 -subj "/C=US/CN=${pc_host_name}"
-  #openssl x509 -in "${INSTALL_DIR}/etc/certificates/${cert_name}.pem" -outform der -out "${INSTALL_DIR}/etc/certificates/${cert_name}.cer" && cat "${INSTALL_DIR}/etc/certificates/${cert_name}.key" >> "${INSTALL_DIR}/etc/certificates/${cert_name}.pem"
+  openssl req -new -nodes -newkey rsa:2048 -out "${INSTALL_DIR}/etc/certificates/${cert_name}.pem" -keyout "${INSTALL_DIR}/etc/certificates/${cert_name}.key" -x509 -days 7300 -subj "/C=US/CN=${pc_host_name}"
+  openssl x509 -in "${INSTALL_DIR}/etc/certificates/${cert_name}.pem" -outform der -out "${INSTALL_DIR}/etc/certificates/${cert_name}.cer" && cat "${INSTALL_DIR}/etc/certificates/${cert_name}.key" >> "${INSTALL_DIR}/etc/certificates/${cert_name}.pem"
 
   # get IP
   sIPNAS=`/usr/syno/sbin/synonet --show | grep -m 1 IP:  | awk -F: '{gsub(/[ \t]+/, "", $2); print $2}'`
@@ -155,10 +155,10 @@ postupgrade ()
   fi
 
   # restore vhost
-  if [ -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ]; then
-    installer_log "restore certificates"
-    mv -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ${INSTALL_DIR}/etc/
-  fi
+  #if [ -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ]; then
+  #  installer_log "restore certificates"
+  #  mv -f ${TMP_DIR}/${PACKAGE}/etc/${PACKAGE}*-vhost.conf ${INSTALL_DIR}/etc/
+  #fi
 
   # remove temp files
   rm -fr ${TMP_DIR}/${PACKAGE}

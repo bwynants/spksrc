@@ -1,6 +1,6 @@
 SPK_NAME = plexconnect
 SPK_VERS = 0.5
-SPK_REV = 17
+SPK_REV = 18
 SPK_ICON = src/plexconnect.png
 DSM_UI_DIR = app
 
@@ -11,7 +11,7 @@ MAINTAINER = bwynants
 DESCRIPTION = PlexConnect: Plex @ aTV - think different. Package to show Plex content on your unhacked AppleTV 2 or 3.
 RELOAD_UI = yes
 DISPLAY_NAME = PlexConnect
-CHANGELOG = "DSM 6.0 support"
+CHANGELOG = "see https://github.com/iBaa/PlexConnect/commit/e6196df56c805c5a16a5b106972a239063467eb6"
 HELPURL = http://forums.plexapp.com/index.php/topic/72356-plexconnect-on-synology/
 HOMEPAGE   = https://github.com/iBaa/PlexConnect
 LICENSE    = GPL
